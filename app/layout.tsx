@@ -13,6 +13,12 @@ export const metadata: Metadata = {
   title: 'Hodimlar Joylashuvi - Monitoring Tizimi',
   description: 'Hodimlar joylashuvini real vaqtda kuzatish tizimi',
   generator: 'v0.app',
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Joylashuv",
+  },
   icons: {
     icon: [
       {
