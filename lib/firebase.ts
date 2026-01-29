@@ -3,13 +3,13 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAPeHmz92Nrgb7uqx8xRz71u0E4OhdEJBg",
-  authDomain: "mapslocation-fc610.firebaseapp.com",
-  projectId: "mapslocation-fc610",
-  storageBucket: "mapslocation-fc610.firebasestorage.app",
-  messagingSenderId: "270513964089",
-  appId: "1:270513964089:web:993a4fde4321a886df79e8",
-  measurementId: "G-N5CMTG1WH4"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
 // Initialize Firebase
