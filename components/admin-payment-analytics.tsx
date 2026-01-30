@@ -349,7 +349,7 @@ export default function AdminPaymentAnalytics() {
             </Card>
 
             {/* All Payments List */}
-            <Card className="bg-card border-border">
+            {/* <Card className="bg-card border-border">
                 <CardHeader>
                     <CardTitle className="text-foreground flex items-center gap-2">
                         <Receipt className="h-5 w-5 text-primary" />
@@ -359,7 +359,7 @@ export default function AdminPaymentAnalytics() {
                 <CardContent>
                     <PaymentList showEmployeeName={true} isAdmin={true} />
                 </CardContent>
-            </Card>
+            </Card> */}
 
             {/* Employee Payments Dialog */}
             {selectedEmployee && (
