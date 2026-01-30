@@ -63,15 +63,17 @@ export default function EmployeeList({ employees, onSelectEmployee, selectedEmpl
         body: JSON.stringify({ uid: deleteEmployee.uid }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to delete employee');
+        throw new Error(data.error || 'Failed to delete employee');
       }
 
       toast.success("Hodim to'liq o'chirildi (tizimdan ham)");
       setDeleteEmployee(null);
-    } catch (error) {
-      console.error(error);
-      toast.error("O'chirishda xatolik yuz berdi");
+    } catch (error: any) {
+      console.error("Delete error:", error);
+      toast.error(error.message || "O'chirishda xatolik yuz berdi");
     } finally {
       setDeleteLoading(false);
     }
