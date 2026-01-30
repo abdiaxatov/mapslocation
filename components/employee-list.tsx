@@ -106,12 +106,12 @@ export default function EmployeeList({ employees, onSelectEmployee, selectedEmpl
             filteredEmployees.map((employee, index) => (
               <div
                 key={employee.uid || `emp-${index}`}
-                className={`w-full p-3 rounded-xl transition-all text-left group ${selectedEmployee?.uid === employee.uid
+                className={`w-full p-4 sm:p-5 rounded-xl transition-all text-left group ${selectedEmployee?.uid === employee.uid
                   ? "bg-primary/10 border border-primary/20"
                   : "hover:bg-secondary border border-transparent"
                   }`}
               >
-                <div className="flex items-start gap-3">
+                <div className="flex items-start gap-3 sm:gap-4">
                   <div
                     className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10 flex items-center justify-center shrink-0"
                   >
@@ -124,70 +124,91 @@ export default function EmployeeList({ employees, onSelectEmployee, selectedEmpl
                     onClick={() => onSelectEmployee?.(employee)}
                     className="flex-1 min-w-0 text-left cursor-pointer"
                   >
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-foreground truncate text-sm">
-                        {employee.firstName} {employee.lastName}
-                      </span>
-                      {employee.uid === currentUserId && (
-                        <Badge variant="outline" className="text-[10px] border-info/50 text-info h-5 px-1.5">
-                          Siz
-                        </Badge>
-                      )}
-                      {employee.role === "admin" && (
-                        <Badge variant="outline" className="text-[10px] border-primary/50 text-primary h-5 px-1.5">
-                          Admin
-                        </Badge>
-                      )}
+                    {/* Name and Badges Row */}
+                    <div className="flex items-center justify-between mb-1.5 gap-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-1 max-w-[70%]">
+                        <span className="font-semibold text-foreground truncate text-sm sm:text-base" title={`${employee.firstName} ${employee.lastName}`}>
+                          {employee.firstName} {employee.lastName}
+                        </span>
+                        {employee.uid === currentUserId && (
+                          <Badge variant="secondary" className="text-[10px] bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 px-1.5 h-5 border-0 shrink-0">
+                            Siz
+                          </Badge>
+                        )}
+                        {employee.role === "admin" && (
+                          <Badge variant="outline" className="text-[10px] border-primary/50 text-primary h-5 px-1.5 shrink-0">
+                            Admin
+                          </Badge>
+                        )}
+                      </div>
+                      {/* Status Indicator */}
+                      <div className="shrink-0 ml-2">
+                        {employee.locationEnabled ? (
+                          <span className="relative flex h-2.5 w-2.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+                          </span>
+                        ) : (
+                          <span className="h-2.5 w-2.5 bg-muted-foreground/30 rounded-full block"></span>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
-                      <Briefcase className="h-3 w-3" />
-                      <span className="truncate">{employee.profession}</span>
+
+                    {/* Profession */}
+                    <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground mb-1">
+                      <Briefcase className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
+                      <span className="truncate" title={employee.profession}>{employee.profession}</span>
                     </div>
+
+                    {/* Phone Number */}
+                    {employee.phoneNumber && (
+                      <a
+                        href={`tel:${employee.phoneNumber}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground/80 hover:text-primary transition-colors mb-1.5 w-fit"
+                      >
+                        <Phone className="h-3 w-3 sm:h-3.5 sm:w-3.5 shrink-0" />
+                        <span className="truncate font-mono text-[11px] sm:text-xs underline decoration-dotted" title={employee.phoneNumber}>{employee.phoneNumber}</span>
+                      </a>
+                    )}
+
+                    {/* Location Status Badge */}
                     {employee.currentLocation && employee.locationEnabled && (
-                      <div className="flex items-center gap-1.5 text-xs text-primary mt-1.5">
+                      <div className="inline-flex items-center gap-1.5 text-[10px] font-medium text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full mt-0.5">
                         <MapPin className="h-3 w-3" />
-                        <span>Joylashuv faol</span>
+                        <span>Kuzatilmoqda</span>
                       </div>
                     )}
                   </button>
 
-                  {/* Actions Menu */}
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-foreground"
-                      >
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-card border-border">
-                      <DropdownMenuItem
-                        onClick={() => onSelectEmployee?.(employee)}
-                        className="text-foreground focus:bg-secondary cursor-pointer"
-                      >
-                        <Eye className="mr-2 h-4 w-4" />
-                        Joylashuvni ko'rish
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setEditEmployee(employee)}
-                        className="text-foreground focus:bg-secondary cursor-pointer"
-                      >
-                        <Pencil className="mr-2 h-4 w-4" />
-                        Tahrirlash
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator className="bg-border" />
-                      <DropdownMenuItem
-                        onClick={() => setDeleteEmployee(employee)}
-                        className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
-                        disabled={employee.uid === currentUserId}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        O'chirish
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {/* Action Buttons - Always Visible */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditEmployee(employee);
+                      }}
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+                      title="Tahrirlash"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeleteEmployee(employee);
+                      }}
+                      disabled={employee.uid === currentUserId}
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 disabled:opacity-30"
+                      title="O'chirish"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))
