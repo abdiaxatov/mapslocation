@@ -186,17 +186,17 @@ export default function AdminDashboard() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="hidden sm:flex items-center gap-2 bg-secondary/50 px-3 py-1.5 rounded-lg border border-border">
-              <div className="flex items-center gap-2">
-                {locationEnabled ? <Wifi className="h-4 w-4 text-primary" /> : <WifiOff className="h-4 w-4 text-muted-foreground" />}
-                <span className="text-sm font-medium hidden md:inline-block">
-                  {locationEnabled ? "Joylashuv faol" : "Joylashuv o'chiq"}
+            <div className="flex items-center gap-2 bg-secondary/50 px-2 sm:px-3 py-1.5 rounded-lg border border-border">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                {locationEnabled ? <Wifi className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" /> : <WifiOff className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />}
+                <span className="text-xs sm:text-sm font-medium">
+                  {locationEnabled ? "Faol" : "O'chiq"}
                 </span>
               </div>
               <Switch
                 checked={locationEnabled}
                 onCheckedChange={handleToggleLocation}
-                className="data-[state=checked]:bg-primary scale-90"
+                className="data-[state=checked]:bg-primary scale-75 sm:scale-90"
               />
             </div>
 

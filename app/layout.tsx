@@ -12,7 +12,7 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: 'Hodimlar Joylashuvi - Monitoring Tizimi',
   description: 'Hodimlar joylashuvini real vaqtda kuzatish tizimi',
-  generator: 'v0.app',
+  generator: 'mapslocation',
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
