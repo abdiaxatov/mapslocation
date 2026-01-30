@@ -206,8 +206,8 @@ export default function EmployeeList({ employees, onSelectEmployee, selectedEmpl
           </div>
         </div>
 
-        <ScrollArea className="flex-1">
-          <div className="p-2 pb-20 space-y-1">
+        <ScrollArea className="flex-1 overflow-auto">
+          <div className="p-2 pb-32 space-y-1">
             {filteredEmployees.length === 0 ? (
               <div className="text-center py-12">
                 <User className="h-12 w-12 mx-auto mb-3 text-muted-foreground/30" />
