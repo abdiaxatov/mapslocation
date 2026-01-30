@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { MapPin, User, Briefcase, Wifi, WifiOff, Search, Users, Pencil, Trash2, Shield } from "lucide-react";
+import { MapPin, User, Briefcase, Wifi, WifiOff, Search, Users, Pencil, Trash2, Shield, Phone } from "lucide-react";
 import { useState } from "react";
 import { doc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -63,17 +63,17 @@ export default function EmployeeList({ employees, onSelectEmployee, selectedEmpl
   const EmployeeCard = ({ employee }: { employee: UserData }) => (
     <div
       className={`w-full p-4 sm:p-5 rounded-xl transition-all text-left group ${selectedEmployee?.uid === employee.uid
-          ? "bg-primary/10 border border-primary/20"
-          : employee.role === "admin"
-            ? "bg-blue-500/5 border border-blue-500/20 hover:bg-blue-500/10"
-            : "hover:bg-secondary border border-transparent"
+        ? "bg-primary/10 border border-primary/20"
+        : employee.role === "admin"
+          ? "bg-blue-500/5 border border-blue-500/20 hover:bg-blue-500/10"
+          : "hover:bg-secondary border border-transparent"
         }`}
     >
       <div className="flex items-start gap-2 sm:gap-4">
         <div
           className={`relative w-10 h-10 rounded-xl ${employee.role === "admin"
-              ? "bg-gradient-to-br from-blue-500/20 to-blue-500/10 border border-blue-500/30"
-              : "bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10"
+            ? "bg-gradient-to-br from-blue-500/20 to-blue-500/10 border border-blue-500/30"
+            : "bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10"
             } flex items-center justify-center shrink-0`}
         >
           <span className={`font-bold text-sm ${employee.role === "admin" ? "text-blue-500" : "text-primary"
@@ -115,19 +115,32 @@ export default function EmployeeList({ employees, onSelectEmployee, selectedEmpl
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground mb-1">
-            <Briefcase className="h-3 w-3 shrink-0" />
-            <span className="truncate">{employee.profession}</span>
-          </div>
-
-          {employee.currentLocation && (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <MapPin className="h-3 w-3 shrink-0" />
-              <span className="truncate">
-                {employee.currentLocation.lat.toFixed(4)}, {employee.currentLocation.lng.toFixed(4)}
-              </span>
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
+              <Briefcase className="h-3 w-3 shrink-0" />
+              <span className="truncate">{employee.profession}</span>
             </div>
-          )}
+
+            {employee.phoneNumber && (
+              <a
+                href={`tel:${employee.phoneNumber}`}
+                onClick={(e) => e.stopPropagation()}
+                className="flex items-center gap-1.5 text-xs sm:text-sm text-primary hover:text-primary/80 hover:underline transition-colors w-fit font-medium"
+              >
+                <Phone className="h-3 w-3 shrink-0" />
+                <span>{employee.phoneNumber}</span>
+              </a>
+            )}
+
+            {employee.currentLocation && (
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <MapPin className="h-3 w-3 shrink-0" />
+                <span className="truncate">
+                  {employee.currentLocation.lat.toFixed(4)}, {employee.currentLocation.lng.toFixed(4)}
+                </span>
+              </div>
+            )}
+          </div>
         </button>
 
         <div className="flex items-center gap-1 shrink-0">
