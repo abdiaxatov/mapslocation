@@ -106,14 +106,6 @@ export default function EmployeePaymentsDialog({
                                     </p>
                                 </div>
                             </DialogTitle>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => onOpenChange(false)}
-                                className="text-muted-foreground hover:text-foreground"
-                            >
-                                <X className="h-5 w-5" />
-                            </Button>
                         </div>
                     </DialogHeader>
 
