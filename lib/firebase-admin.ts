@@ -12,11 +12,19 @@ if (!admin.apps.length) {
         };
 
         if (serviceAccount.privateKey) {
-            admin.initializeApp({
-                credential: admin.credential.cert(serviceAccount),
-            });
+            try {
+                admin.initializeApp({
+                    credential: admin.credential.cert(serviceAccount),
+                });
+                console.log("Firebase Admin Initialized successfully");
+            } catch (e) {
+                console.error("Firebase Admin Initialization FAILED:", e);
+            }
         } else {
-            console.warn("FIREBASE_PRIVATE_KEY is missing, skipping admin init");
+            console.warn("FIREBASE_PRIVATE_KEY is missing/invalid. Raw/Clean length:",
+                process.env.FIREBASE_PRIVATE_KEY?.length,
+                serviceAccount.privateKey?.length
+            );
         }
     } catch (error) {
         console.error("Firebase Admin Init Error:", error);
