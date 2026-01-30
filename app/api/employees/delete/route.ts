@@ -18,11 +18,18 @@ export async function POST(request: Request) {
             );
         }
 
-        // Delete from Firebase Auth
-        await adminAuth.deleteUser(uid);
+        // Try to delete from Firebase Auth (may not exist if created manually in Firestore)
+        try {
+            await adminAuth.deleteUser(uid);
+            console.log(`Deleted user ${uid} from Firebase Auth`);
+        } catch (authError: any) {
+            // User might not exist in Auth, that's okay - continue with Firestore deletion
+            console.warn(`Could not delete from Auth (user may not exist): ${authError.message}`);
+        }
 
         // Delete from Firestore
         await adminDb.collection("users").doc(uid).delete();
+        console.log(`Deleted user ${uid} from Firestore`);
 
         return NextResponse.json({ success: true, uid });
     } catch (error: any) {
