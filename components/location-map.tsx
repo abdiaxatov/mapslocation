@@ -10,12 +10,14 @@ interface LocationMapProps {
   center?: [number, number];
   zoom?: number;
   selectedEmployee?: UserData | null;
+  currentUserId?: string;
 }
 
-const createMarkerIcon = (isOnline: boolean, isSelected: boolean, name: string) => {
-  const size = isSelected ? 48 : 40;
+const createMarkerIcon = (isOnline: boolean, isSelected: boolean, isMe: boolean, name: string) => {
+  const size = isSelected ? 48 : (isMe ? 44 : 40);
   const bgColor = isOnline ? "#4ade80" : "#64748b";
-  const borderColor = isSelected ? "#ffffff" : "#1e1e24";
+  const borderColor = isSelected ? "#ffffff" : (isMe ? "#3b82f6" : "#1e1e24"); // Blue border for Me
+  const shadowColor = isMe ? "rgba(59, 130, 246, 0.5)" : "rgba(0,0,0,0.4)";
 
   return L.divIcon({
     className: "custom-marker",
@@ -27,17 +29,24 @@ const createMarkerIcon = (isOnline: boolean, isSelected: boolean, name: string) 
           border-radius: 50%;
           background: ${bgColor};
           border: 3px solid ${borderColor};
-          box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+          box-shadow: 0 4px 12px ${shadowColor};
           display: flex;
           align-items: center;
           justify-content: center;
           transform: ${isSelected ? 'scale(1.1)' : 'scale(1)'};
           transition: transform 0.2s ease;
-          z-index: 10;
+          z-index: ${isMe ? 30 : 10};
         ">
-          <svg width="${size * 0.5}" height="${size * 0.5}" viewBox="0 0 24 24" fill="${borderColor}">
-            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-          </svg>
+          ${isMe ?
+        `<svg width="${size * 0.5}" height="${size * 0.5}" viewBox="0 0 24 24" fill="${borderColor}" stroke="white" stroke-width="2">
+               <circle cx="12" cy="12" r="10" />
+               <circle cx="12" cy="12" r="3" fill="white" />
+             </svg>`
+        :
+        `<svg width="${size * 0.5}" height="${size * 0.5}" viewBox="0 0 24 24" fill="${borderColor}">
+               <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+             </svg>`
+      }
         </div>
         <div style="
           position: absolute;
@@ -55,7 +64,7 @@ const createMarkerIcon = (isOnline: boolean, isSelected: boolean, name: string) 
           z-index: 20;
           box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         ">
-          ${name}
+          ${isMe ? "Siz" : name}
         </div>
       </div>
     `,
@@ -65,11 +74,14 @@ const createMarkerIcon = (isOnline: boolean, isSelected: boolean, name: string) 
   });
 };
 
+const DEFAULT_CENTER: [number, number] = [41.2995, 69.2401];
+
 export default function LocationMap({
   employees,
-  center = [41.2995, 69.2401],
+  center = DEFAULT_CENTER,
   zoom = 12,
-  selectedEmployee
+  selectedEmployee,
+  currentUserId
 }: LocationMapProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
@@ -113,9 +125,11 @@ export default function LocationMap({
     for (const employee of employees) {
       if (employee.currentLocation) {
         const isSelected = selectedEmployee?.uid === employee.uid;
+        const isMe = currentUserId === employee.uid;
+
         const marker = L.marker(
           [employee.currentLocation.lat, employee.currentLocation.lng],
-          { icon: createMarkerIcon(employee.locationEnabled ?? false, isSelected, employee.firstName) }
+          { icon: createMarkerIcon(employee.locationEnabled ?? false, isSelected, isMe, employee.firstName) }
         ).addTo(mapInstanceRef.current);
 
         // Format timestamp

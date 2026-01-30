@@ -22,7 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { MapPin, User, Briefcase, Wifi, WifiOff, Search, Users, MoreVertical, Pencil, Trash2, Eye } from "lucide-react";
+import { MapPin, User, Briefcase, Wifi, WifiOff, Search, Users, MoreVertical, Pencil, Trash2, Eye, Phone } from "lucide-react";
 import { useState } from "react";
 import { doc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -41,8 +41,8 @@ export default function EmployeeList({ employees, onSelectEmployee, selectedEmpl
   const [editEmployee, setEditEmployee] = useState<UserData | null>(null);
   const [deleteEmployee, setDeleteEmployee] = useState<UserData | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  
-  const filteredEmployees = employees.filter(e => 
+
+  const filteredEmployees = employees.filter(e =>
     `${e.firstName} ${e.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
     e.profession.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -50,12 +50,24 @@ export default function EmployeeList({ employees, onSelectEmployee, selectedEmpl
   const onlineCount = employees.filter(e => e.locationEnabled).length;
 
   const handleDelete = async () => {
-    if (!deleteEmployee) return;
+    if (!deleteEmployee || !deleteEmployee.uid) return;
     setDeleteLoading(true);
-    
+
     try {
-      await deleteDoc(doc(db, "users", deleteEmployee.uid));
-      toast.success("Hodim o'chirildi");
+      // Use API to delete from Auth and Firestore
+      const response = await fetch('/api/employees/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ uid: deleteEmployee.uid }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to delete employee');
+      }
+
+      toast.success("Hodim to'liq o'chirildi (tizimdan ham)");
       setDeleteEmployee(null);
     } catch (error) {
       console.error(error);
@@ -91,34 +103,22 @@ export default function EmployeeList({ employees, onSelectEmployee, selectedEmpl
               </p>
             </div>
           ) : (
-            filteredEmployees.map((employee) => (
+            filteredEmployees.map((employee, index) => (
               <div
-                key={employee.uid}
-                className={`w-full p-3 rounded-xl transition-all text-left group ${
-                  selectedEmployee?.uid === employee.uid 
-                    ? "bg-primary/10 border border-primary/20" 
-                    : "hover:bg-secondary border border-transparent"
-                }`}
+                key={employee.uid || `emp-${index}`}
+                className={`w-full p-3 rounded-xl transition-all text-left group ${selectedEmployee?.uid === employee.uid
+                  ? "bg-primary/10 border border-primary/20"
+                  : "hover:bg-secondary border border-transparent"
+                  }`}
               >
                 <div className="flex items-start gap-3">
-                  <button
-                    type="button"
-                    onClick={() => onSelectEmployee?.(employee)}
-                    className={`relative w-10 h-10 rounded-full flex items-center justify-center transition-colors cursor-pointer ${
-                      employee.locationEnabled 
-                        ? "bg-primary/20" 
-                        : "bg-muted"
-                    }`}
+                  <div
+                    className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10 flex items-center justify-center shrink-0"
                   >
-                    {employee.locationEnabled ? (
-                      <Wifi className="h-5 w-5 text-primary" />
-                    ) : (
-                      <WifiOff className="h-5 w-5 text-muted-foreground" />
-                    )}
-                    {employee.locationEnabled && (
-                      <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-primary rounded-full border-2 border-card animate-pulse" />
-                    )}
-                  </button>
+                    <span className="font-bold text-primary text-sm">
+                      {employee.firstName[0]}{employee.lastName[0]}
+                    </span>
+                  </div>
                   <button
                     type="button"
                     onClick={() => onSelectEmployee?.(employee)}
@@ -150,7 +150,7 @@ export default function EmployeeList({ employees, onSelectEmployee, selectedEmpl
                       </div>
                     )}
                   </button>
-                  
+
                   {/* Actions Menu */}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -163,14 +163,14 @@ export default function EmployeeList({ employees, onSelectEmployee, selectedEmpl
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="bg-card border-border">
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={() => onSelectEmployee?.(employee)}
                         className="text-foreground focus:bg-secondary cursor-pointer"
                       >
                         <Eye className="mr-2 h-4 w-4" />
                         Joylashuvni ko'rish
                       </DropdownMenuItem>
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={() => setEditEmployee(employee)}
                         className="text-foreground focus:bg-secondary cursor-pointer"
                       >
@@ -178,7 +178,7 @@ export default function EmployeeList({ employees, onSelectEmployee, selectedEmpl
                         Tahrirlash
                       </DropdownMenuItem>
                       <DropdownMenuSeparator className="bg-border" />
-                      <DropdownMenuItem 
+                      <DropdownMenuItem
                         onClick={() => setDeleteEmployee(employee)}
                         className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
                         disabled={employee.uid === currentUserId}

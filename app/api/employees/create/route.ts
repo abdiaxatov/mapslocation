@@ -1,19 +1,22 @@
 import { NextResponse } from "next/server";
 import { adminAuth, adminDb } from "@/lib/firebase-admin";
+import * as admin from 'firebase-admin';
 
 export async function POST(request: Request) {
     try {
         if (!adminAuth || !adminDb) {
-            throw new Error("Firebase Admin not initialized");
+            console.error("Firebase Admin services are null. Checks: apps.length=", admin.apps.length);
+            throw new Error("Server Configuration Error: Firebase Admin not initialized. Please check server logs for 'Firebase Admin Initialization FAILED'.");
         }
 
-        const { email, password, firstName, lastName, profession, role } = await request.json();
+        const { email, password, firstName, lastName, profession, role, phoneNumber } = await request.json();
 
         // Create user in Firebase Auth
         const userRecord = await adminAuth.createUser({
             email,
             password,
             displayName: `${firstName} ${lastName}`,
+            phoneNumber: phoneNumber || undefined, // Only pass if provided
         });
 
         // Create user document in Firestore
@@ -24,6 +27,7 @@ export async function POST(request: Request) {
             lastName,
             profession,
             role,
+            phoneNumber: phoneNumber || null,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             locationEnabled: false,
         });

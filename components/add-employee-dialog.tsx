@@ -22,7 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserPlus, Loader2, User, Mail, Lock, Briefcase, Shield } from "lucide-react";
+import { UserPlus, Loader2, User, Mail, Lock, Briefcase, Shield, Phone } from "lucide-react";
 import { toast } from "sonner";
 
 interface AddEmployeeDialogProps {
@@ -38,6 +38,7 @@ export default function AddEmployeeDialog({ onSuccess }: AddEmployeeDialogProps)
     firstName: "",
     lastName: "",
     profession: "",
+    phoneNumber: "",
     role: "employee" as "admin" | "employee",
   });
   const handleSubmit = async (e: React.FormEvent) => {
@@ -66,6 +67,7 @@ export default function AddEmployeeDialog({ onSuccess }: AddEmployeeDialogProps)
         firstName: "",
         lastName: "",
         profession: "",
+        phoneNumber: "",
         role: "employee",
       });
       setOpen(false);
@@ -156,6 +158,7 @@ export default function AddEmployeeDialog({ onSuccess }: AddEmployeeDialogProps)
               required
               minLength={6}
               className="h-11 bg-secondary border-border text-foreground placeholder:text-muted-foreground"
+              className="h-11 bg-secondary border-border text-foreground placeholder:text-muted-foreground"
             />
           </div>
           <div className="space-y-2">
@@ -169,6 +172,19 @@ export default function AddEmployeeDialog({ onSuccess }: AddEmployeeDialogProps)
               value={formData.profession}
               onChange={(e) => setFormData({ ...formData, profession: e.target.value })}
               required
+              className="h-11 bg-secondary border-border text-foreground placeholder:text-muted-foreground"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="phoneNumber" className="text-foreground text-sm flex items-center gap-2">
+              <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+              Telefon raqami
+            </Label>
+            <Input
+              id="phoneNumber"
+              placeholder="+998 90 123 45 67"
+              value={formData.phoneNumber}
+              onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
               className="h-11 bg-secondary border-border text-foreground placeholder:text-muted-foreground"
             />
           </div>

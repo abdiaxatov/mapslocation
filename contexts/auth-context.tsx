@@ -1,12 +1,12 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { 
-  onAuthStateChanged, 
-  signInWithEmailAndPassword, 
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
   signOut as firebaseSignOut,
   createUserWithEmailAndPassword,
-  type User 
+  type User
 } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
@@ -18,6 +18,7 @@ export interface UserData {
   lastName: string;
   profession: string;
   role: "admin" | "employee";
+  phoneNumber?: string;
   createdAt: Date;
   locationEnabled?: boolean;
   currentLocation?: {
@@ -53,7 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
-      
+
       if (firebaseUser) {
         const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
         if (userDoc.exists()) {
@@ -62,7 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setUserData(null);
       }
-      
+
       setLoading(false);
     });
 
@@ -89,10 +90,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Store current admin's credentials
     const currentUser = auth.currentUser;
     const currentUserData = userData;
-    
+
     // Create user in Firebase Auth
     const userCredential = await createUserWithEmailAndPassword(auth, data.email, data.password);
-    
+
     // Create user document in Firestore
     await setDoc(doc(db, "users", userCredential.user.uid), {
       uid: userCredential.user.uid,
@@ -104,10 +105,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       createdAt: serverTimestamp(),
       locationEnabled: false
     });
-    
+
     // Sign out the newly created user and restore admin session
     await firebaseSignOut(auth);
-    
+
     // Restore admin session state (user will need to refresh or we handle it)
     if (currentUser && currentUserData) {
       setUser(currentUser);

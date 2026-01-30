@@ -9,8 +9,10 @@ import dynamic from "next/dynamic";
 import AddEmployeeDialog from "@/components/add-employee-dialog";
 import EmployeeList from "@/components/employee-list";
 import { Button } from "@/components/ui/button";
-import { Loader2, LogOut, MapPin, Menu, X, Users } from "lucide-react";
+import { Loader2, LogOut, MapPin, Menu, X, Users, Wifi, WifiOff } from "lucide-react";
 import { toast } from "sonner";
+import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { Switch } from "@/components/ui/switch";
 
 const LocationMap = dynamic(() => import("@/components/location-map"), {
   ssr: false,
@@ -27,6 +29,83 @@ export default function AdminDashboard() {
   const [employees, setEmployees] = useState<UserData[]>([]);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<UserData | null>(null);
+  const [locationEnabled, setLocationEnabled] = useState(false);
+
+  // Sync local state with userData
+  useEffect(() => {
+    if (userData) {
+      setLocationEnabled(userData.locationEnabled || false);
+    }
+  }, [userData]);
+
+  // Location Tracking Effect
+  useEffect(() => {
+    let watchId: number | undefined;
+
+    const updateLocation = async (lat: number, lng: number) => {
+      if (!user) return;
+      try {
+        await updateDoc(doc(db, "users", user.uid), {
+          currentLocation: { lat, lng, timestamp: serverTimestamp() }
+        });
+      } catch (error) {
+        console.error("Error updating location:", error);
+      }
+    };
+
+    if (locationEnabled && user) {
+      if (!navigator.geolocation) {
+        toast.error("Brauzer joylashuvni qo'llab-quvvatlamaydi");
+        return;
+      }
+
+      watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          updateLocation(position.coords.latitude, position.coords.longitude);
+        },
+        (error) => {
+          console.error("Location error:", error.code, error.message);
+          switch (error.code) {
+            case 1: // PERMISSION_DENIED
+              toast.error("Joylashuvga ruxsat berilmadi. Iltimos, brauzer sozlamalarini tekshiring.");
+              break;
+            case 2: // POSITION_UNAVAILABLE
+              toast.error("Joylashuvni aniqlab bo'lmadi. GPS yoqilganligini tekshiring.");
+              break;
+            case 3: // TIMEOUT
+              toast.error("Joylashuvni aniqlash vaqti tugadi.");
+              break;
+            default:
+              toast.error("Joylashuv xatoligi yuz berdi.");
+          }
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      );
+    } else if (!locationEnabled && user) {
+      // Optional: clear location when disabled? 
+      // For now just stop updating.
+    }
+
+    return () => {
+      if (watchId !== undefined) navigator.geolocation.clearWatch(watchId);
+    };
+  }, [locationEnabled, user]);
+
+  const handleToggleLocation = async (enabled: boolean) => {
+    if (!user) return;
+    try {
+      setLocationEnabled(enabled); // Optimistic update
+      await updateDoc(doc(db, "users", user.uid), {
+        locationEnabled: enabled
+      });
+      if (enabled) toast.success("Joylashuv yoqildi");
+      else toast.info("Joylashuv o'chirildi");
+    } catch (error) {
+      console.error(error);
+      setLocationEnabled(!enabled); // Revert on error
+      toast.error("Xatolik yuz berdi");
+    }
+  };
 
   useEffect(() => {
     if (!loading && (!user || !userData)) {
@@ -107,6 +186,20 @@ export default function AdminDashboard() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            <div className="hidden sm:flex items-center gap-2 bg-secondary/50 px-3 py-1.5 rounded-lg border border-border">
+              <div className="flex items-center gap-2">
+                {locationEnabled ? <Wifi className="h-4 w-4 text-primary" /> : <WifiOff className="h-4 w-4 text-muted-foreground" />}
+                <span className="text-sm font-medium hidden md:inline-block">
+                  {locationEnabled ? "Joylashuv faol" : "Joylashuv o'chiq"}
+                </span>
+              </div>
+              <Switch
+                checked={locationEnabled}
+                onCheckedChange={handleToggleLocation}
+                className="data-[state=checked]:bg-primary scale-90"
+              />
+            </div>
+
             <AddEmployeeDialog />
             <Button
               variant="ghost"
@@ -178,6 +271,7 @@ export default function AdminDashboard() {
               <LocationMap
                 employees={employees}
                 selectedEmployee={selectedEmployee}
+                currentUserId={user?.uid}
               />
             </div>
           </div>
