@@ -4,8 +4,8 @@
     "description": "Hodimlar joylashuvini real vaqtda kuzatish tizimi",
     "start_url": "/",
     "display": "standalone",
-    "background_color": "#0a0a0c",
-    "theme_color": "#0a0a0c",
+    "background_color": "#01b56f",
+    "theme_color": "#01b56f",
     "orientation": "portrait",
     "icons": [
         {
