@@ -113,7 +113,7 @@ export default function EmployeeList({ employees, onSelectEmployee, selectedEmpl
                   : "hover:bg-secondary border border-transparent"
                   }`}
               >
-                <div className="flex items-start gap-3 sm:gap-4">
+                <div className="flex items-start gap-2 sm:gap-4">
                   <div
                     className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10 flex items-center justify-center shrink-0"
                   >
@@ -127,7 +127,7 @@ export default function EmployeeList({ employees, onSelectEmployee, selectedEmpl
                     className="flex-1 min-w-0 text-left cursor-pointer"
                   >
                     {/* Name and Badges Row */}
-                    <div className="flex items-center justify-between mb-1.5 gap-2">
+                    <div className="flex items-center justify-between mb-1.5 gap-1">
                       <div className="flex items-center gap-2 min-w-0 flex-1 max-w-[70%]">
                         <span className="font-semibold text-foreground truncate text-sm sm:text-base" title={`${employee.firstName} ${employee.lastName}`}>
                           {employee.firstName} {employee.lastName}
