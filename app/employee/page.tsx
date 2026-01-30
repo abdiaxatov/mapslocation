@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, updateDoc, serverTimestamp, collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -19,7 +19,10 @@ import {
   Wifi,
   WifiOff,
   MapPinned,
-  AlertCircle
+  AlertCircle,
+  DollarSign,
+  TrendingUp,
+  Receipt
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,6 +33,8 @@ export default function EmployeeDashboard() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [totalPayments, setTotalPayments] = useState(0);
+  const [paymentCount, setPaymentCount] = useState(0);
 
   useEffect(() => {
     if (!loading && (!user || !userData)) {
@@ -41,6 +46,30 @@ export default function EmployeeDashboard() {
       setLocationEnabled(userData.locationEnabled || false);
     }
   }, [user, userData, loading, router]);
+
+  // Fetch payment statistics
+  useEffect(() => {
+    if (!user) return;
+
+    const q = query(
+      collection(db, "payments"),
+      where("employeeId", "==", user.uid)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      let total = 0;
+      let count = 0;
+      snapshot.forEach((doc) => {
+        const payment = doc.data();
+        total += payment.amount || 0;
+        count++;
+      });
+      setTotalPayments(total);
+      setPaymentCount(count);
+    });
+
+    return () => unsubscribe();
+  }, [user]);
 
   const updateLocation = useCallback(async (lat: number, lng: number) => {
     if (!user) return;
@@ -174,15 +203,26 @@ export default function EmployeeDashboard() {
               <p className="text-xs text-muted-foreground hidden sm:block">Joylashuvni boshqarish</p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleLogout}
-            className="text-muted-foreground hover:text-foreground hover:bg-secondary"
-          >
-            <LogOut className="h-4 w-4 sm:mr-2" />
-            <span className="hidden sm:inline">Chiqish</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => router.push("/employee/payments")}
+              className="gap-2"
+            >
+              <DollarSign className="h-4 w-4" />
+              <span className="hidden sm:inline">To'lovlar</span>
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-muted-foreground hover:text-foreground hover:bg-secondary"
+            >
+              <LogOut className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">Chiqish</span>
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -228,6 +268,67 @@ export default function EmployeeDashboard() {
                 </Badge>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Payment Statistics Card */}
+        <div className="bg-gradient-to-br from-card via-card to-primary/5 border border-border rounded-2xl overflow-hidden shadow-sm">
+          <div className="p-4 sm:p-5 border-b border-border bg-card/80 backdrop-blur-sm">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl flex items-center justify-center">
+                <DollarSign className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-foreground text-sm sm:text-base">To'lovlar statistikasi</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">Yig'ilgan pul haqida ma'lumot</p>
+              </div>
+            </div>
+          </div>
+          <div className="p-4 sm:p-5 space-y-4">
+            {/* Statistics Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              {/* Total Amount Card */}
+              <div className="relative overflow-hidden p-4 sm:p-5 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/20 rounded-xl group hover:shadow-md transition-all">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-primary/5 rounded-full -mr-10 -mt-10 group-hover:scale-110 transition-transform" />
+                <div className="relative">
+                  <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                    <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                      <TrendingUp className="h-4 w-4 text-primary" />
+                    </div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">Jami yig'ilgan</p>
+                  </div>
+                  <p className="text-2xl sm:text-3xl font-bold text-primary break-all">
+                    {new Intl.NumberFormat("uz-UZ").format(totalPayments)}
+                  </p>
+                  <p className="text-xs sm:text-sm text-primary/70 mt-1">so'm</p>
+                </div>
+              </div>
+
+              {/* Payment Count Card */}
+              <div className="relative overflow-hidden p-4 sm:p-5 bg-secondary/50 border border-border rounded-xl group hover:shadow-md transition-all">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-foreground/5 rounded-full -mr-10 -mt-10 group-hover:scale-110 transition-transform" />
+                <div className="relative">
+                  <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                    <div className="w-8 h-8 bg-foreground/5 rounded-lg flex items-center justify-center">
+                      <Receipt className="h-4 w-4 text-foreground" />
+                    </div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">To'lovlar soni</p>
+                  </div>
+                  <p className="text-2xl sm:text-3xl font-bold text-foreground">{paymentCount}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">ta to'lov</p>
+                </div>
+              </div>
+            </div>
+
+            {/* View All Button */}
+            <Button
+              onClick={() => router.push("/employee/payments")}
+              className="w-full gap-2 h-10 sm:h-11 text-sm sm:text-base font-medium shadow-sm hover:shadow-md transition-all"
+              variant="default"
+            >
+              <Receipt className="h-4 w-4" />
+              <span>Barcha to'lovlarni ko'rish</span>
+            </Button>
           </div>
         </div>
 

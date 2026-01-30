@@ -9,10 +9,11 @@ import dynamic from "next/dynamic";
 import AddEmployeeDialog from "@/components/add-employee-dialog";
 import EmployeeList from "@/components/employee-list";
 import { Button } from "@/components/ui/button";
-import { Loader2, LogOut, MapPin, Menu, X, Users, Wifi, WifiOff } from "lucide-react";
+import { Loader2, LogOut, MapPin, Menu, X, Users, Wifi, WifiOff, DollarSign } from "lucide-react";
 import { toast } from "sonner";
 import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { Switch } from "@/components/ui/switch";
+import AdminPaymentAnalytics from "@/components/admin-payment-analytics";
 
 const LocationMap = dynamic(() => import("@/components/location-map"), {
   ssr: false,
@@ -30,6 +31,7 @@ export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<UserData | null>(null);
   const [locationEnabled, setLocationEnabled] = useState(false);
+  const [activeTab, setActiveTab] = useState<"map" | "payments">("map");
 
   // Sync local state with userData
   useEffect(() => {
@@ -124,7 +126,8 @@ export default function AdminDashboard() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const employeeData: UserData[] = [];
       snapshot.forEach((doc) => {
-        employeeData.push(doc.data() as UserData);
+        const userData = doc.data() as UserData;
+        employeeData.push(userData);
       });
       setEmployees(employeeData);
     });
@@ -186,19 +189,48 @@ export default function AdminDashboard() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="flex items-center gap-2 bg-secondary/50 px-2 sm:px-3 py-1.5 rounded-lg border border-border">
-              <div className="flex items-center gap-1.5 sm:gap-2">
-                {locationEnabled ? <Wifi className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" /> : <WifiOff className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />}
-                <span className="text-xs sm:text-sm font-medium">
-                  {locationEnabled ? "Faol" : "O'chiq"}
-                </span>
+
+
+            {activeTab === "map" && (
+              <div className="flex items-center gap-2 bg-secondary/50 px-2 sm:px-3 py-1.5 rounded-lg border border-border">
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  {locationEnabled ? <Wifi className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" /> : <WifiOff className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />}
+                  <span className="text-xs sm:text-sm font-medium">
+                    {locationEnabled ? "Faol" : "O'chiq"}
+                  </span>
+                </div>
+                <Switch
+                  checked={locationEnabled}
+                  onCheckedChange={handleToggleLocation}
+                  className="data-[state=checked]:bg-primary scale-75 sm:scale-90"
+                />
               </div>
-              <Switch
-                checked={locationEnabled}
-                onCheckedChange={handleToggleLocation}
-                className="data-[state=checked]:bg-primary scale-75 sm:scale-90"
-              />
+            )}
+
+
+            <div className="flex items-center gap-1 bg-secondary/50 p-1 rounded-lg border border-border">
+              <button
+                onClick={() => setActiveTab("map")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors ${activeTab === "map"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
+              >
+                <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Xarita</span>
+              </button>
+              <button
+                onClick={() => setActiveTab("payments")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors ${activeTab === "payments"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+                  }`}
+              >
+                <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">To'lovlar</span>
+              </button>
             </div>
+
 
             <AddEmployeeDialog />
             <Button
@@ -244,37 +276,47 @@ export default function AdminDashboard() {
 
         {/* Map Area */}
         <main className="flex-1 flex flex-col">
-          {/* Stats Bar */}
-          <div className="bg-card border-b border-border px-4 py-3">
-            <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <span className="text-muted-foreground">Jami:</span>
-                <span className="font-semibold text-foreground">{employees.length}</span>
+          {activeTab === "map" ? (
+            <>
+              {/* Stats Bar */}
+              <div className="bg-card border-b border-border px-4 py-3">
+                <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Jami:</span>
+                    <span className="font-semibold text-foreground">{employees.length}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                    <span className="text-muted-foreground">Online:</span>
+                    <span className="font-semibold text-primary">{onlineCount}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-muted-foreground" />
+                    <span className="text-muted-foreground">Offline:</span>
+                    <span className="font-semibold text-foreground">{offlineCount}</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                <span className="text-muted-foreground">Online:</span>
-                <span className="font-semibold text-primary">{onlineCount}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-muted-foreground" />
-                <span className="text-muted-foreground">Offline:</span>
-                <span className="font-semibold text-foreground">{offlineCount}</span>
-              </div>
-            </div>
-          </div>
 
-          {/* Map */}
-          <div className="flex-1 p-4">
-            <div className="h-full bg-card rounded-xl border border-border overflow-hidden">
-              <LocationMap
-                employees={employees}
-                selectedEmployee={selectedEmployee}
-                currentUserId={user?.uid}
-              />
+              {/* Map */}
+              <div className="flex-1 p-4">
+                <div className="h-full bg-card rounded-xl border border-border overflow-hidden">
+                  <LocationMap
+                    employees={employees}
+                    selectedEmployee={selectedEmployee}
+                    currentUserId={user?.uid}
+                  />
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 p-4 overflow-auto">
+              <div className="max-w-7xl mx-auto">
+                <AdminPaymentAnalytics />
+              </div>
             </div>
-          </div>
+          )}
         </main>
       </div>
     </div>
