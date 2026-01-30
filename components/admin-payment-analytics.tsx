@@ -12,6 +12,7 @@ import {
     TrendingUp,
     Users,
     Receipt,
+    Phone,
 } from "lucide-react";
 import PaymentList from "./payment-list";
 import EmployeePaymentsDialog from "./employee-payments-dialog";
@@ -20,6 +21,7 @@ export default function AdminPaymentAnalytics() {
     const [payments, setPayments] = useState<Payment[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedEmployee, setSelectedEmployee] = useState<{ name: string; id: string } | null>(null);
+    const [employeePhones, setEmployeePhones] = useState<Map<string, string>>(new Map());
 
     useEffect(() => {
         const q = query(collection(db, "payments"));
@@ -41,6 +43,36 @@ export default function AdminPaymentAnalytics() {
 
         return () => unsubscribe();
     }, []);
+
+    // Fetch employee phone numbers
+    useEffect(() => {
+        const fetchPhones = async () => {
+            const uniqueEmployeeIds = [...new Set(payments.map(p => p.employeeId))];
+            const phoneMap = new Map<string, string>();
+
+            for (const employeeId of uniqueEmployeeIds) {
+                try {
+                    const userDoc = await import('firebase/firestore').then(mod =>
+                        mod.getDoc(mod.doc(db, 'users', employeeId))
+                    );
+                    if (userDoc.exists()) {
+                        const userData = userDoc.data();
+                        if (userData.phoneNumber) {
+                            phoneMap.set(employeeId, userData.phoneNumber);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error fetching phone:', error);
+                }
+            }
+
+            setEmployeePhones(phoneMap);
+        };
+
+        if (payments.length > 0) {
+            fetchPhones();
+        }
+    }, [payments]);
 
     // Calculate statistics
     const totalAmount = payments.reduce((sum, p) => sum + p.amount, 0);
@@ -159,83 +191,159 @@ export default function AdminPaymentAnalytics() {
                             <p className="text-muted-foreground">To'lovlar yo'q</p>
                         </div>
                     ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full">
-                                <thead>
-                                    <tr className="border-b border-border">
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
-                                            Hodim
-                                        </th>
-                                        <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">
-                                            Jami summa
-                                        </th>
-                                        <th className="text-center py-3 px-4 text-sm font-medium text-muted-foreground">
-                                            To'lovlar
-                                        </th>
-                                        <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground hidden sm:table-cell">
-                                            Oxirgi to'lov
-                                        </th>
-                                        <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">
-                                            Amallar
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {employeeSummaries.map((summary) => (
-                                        <tr
-                                            key={summary.employeeId}
-                                            className="border-b border-border hover:bg-secondary/50 transition-colors"
-                                        >
-                                            <td className="py-3 px-4">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                                                        <span className="text-sm font-medium text-primary">
-                                                            {summary.employeeName.charAt(0)}
+                        <>
+                            {/* Desktop Table View */}
+                            <div className="hidden md:block overflow-x-auto">
+                                <table className="w-full">
+                                    <thead>
+                                        <tr className="border-b border-border">
+                                            <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                                                Hodim
+                                            </th>
+                                            <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">
+                                                Jami summa
+                                            </th>
+                                            <th className="text-center py-3 px-4 text-sm font-medium text-muted-foreground">
+                                                To'lovlar
+                                            </th>
+                                            <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                                                Oxirgi to'lov
+                                            </th>
+                                            <th className="text-right py-3 px-4 text-sm font-medium text-muted-foreground">
+                                                Amallar
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {employeeSummaries.map((summary) => (
+                                            <tr
+                                                key={summary.employeeId}
+                                                className="border-b border-border hover:bg-secondary/50 transition-colors"
+                                            >
+                                                <td className="py-3 px-4">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                                            <span className="text-sm font-medium text-primary">
+                                                                {summary.employeeName.charAt(0)}
+                                                            </span>
+                                                        </div>
+                                                        <span className="font-medium text-foreground text-sm">
+                                                            {summary.employeeName}
                                                         </span>
                                                     </div>
-                                                    <span className="font-medium text-foreground text-sm">
-                                                        {summary.employeeName}
+                                                </td>
+                                                <td className="py-3 px-4 text-right">
+                                                    <div className="flex flex-col items-end">
+                                                        <span className="font-bold text-primary">
+                                                            {formatCurrency(summary.totalAmount)}
+                                                        </span>
+                                                        <span className="text-xs text-primary/70">so'm</span>
+                                                    </div>
+                                                </td>
+                                                <td className="py-3 px-4 text-center">
+                                                    <Badge variant="secondary" className="font-medium">{summary.paymentCount}</Badge>
+                                                </td>
+                                                <td className="py-3 px-4 text-sm text-muted-foreground">
+                                                    {formatDate(summary.lastPaymentDate)}
+                                                </td>
+                                                <td className="py-3 px-4">
+                                                    {employeePhones.get(summary.employeeId) ? (
+                                                        <a
+                                                            href={`tel:${employeePhones.get(summary.employeeId)}`}
+                                                            className="flex items-center gap-1 text-sm text-primary hover:text-primary/80 hover:underline transition-colors"
+                                                        >
+                                                            <Phone className="h-3 w-3" />
+                                                            <span>{employeePhones.get(summary.employeeId)}</span>
+                                                        </a>
+                                                    ) : (
+                                                        <span className="text-xs text-muted-foreground">—</span>
+                                                    )}
+                                                </td>
+                                                <td className="py-3 px-4">
+                                                    <div className="flex items-center justify-end gap-1">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={() => {
+                                                                setSelectedEmployee({
+                                                                    name: summary.employeeName,
+                                                                    id: summary.employeeId
+                                                                });
+                                                            }}
+                                                            className="gap-1 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                                                            title="To'lovlarni ko'rish"
+                                                        >
+                                                            <Receipt className="h-4 w-4" />
+                                                            <span className="text-xs">Ko'rish</span>
+                                                        </Button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Mobile Card View */}
+                            <div className="md:hidden space-y-3">
+                                {employeeSummaries.map((summary) => (
+                                    <div
+                                        key={summary.employeeId}
+                                        className="p-4 rounded-lg border border-border bg-secondary/30 hover:bg-secondary/50 transition-colors"
+                                    >
+                                        <div className="flex items-start justify-between gap-3 mb-3">
+                                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                                    <span className="text-base font-bold text-primary">
+                                                        {summary.employeeName.charAt(0)}
                                                     </span>
                                                 </div>
-                                            </td>
-                                            <td className="py-3 px-4 text-right">
-                                                <div className="flex flex-col items-end">
-                                                    <span className="font-bold text-primary">
+                                                <div className="min-w-0 flex-1">
+                                                    <h3 className="font-semibold text-foreground text-base truncate">
+                                                        {summary.employeeName}
+                                                    </h3>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {summary.paymentCount} ta to'lov
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setSelectedEmployee({
+                                                        name: summary.employeeName,
+                                                        id: summary.employeeId
+                                                    });
+                                                }}
+                                                className="gap-1 text-primary hover:text-primary hover:bg-primary/10 shrink-0"
+                                            >
+                                                <Receipt className="h-4 w-4" />
+                                                <span className="text-xs">Ko'rish</span>
+                                            </Button>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm text-muted-foreground">Jami summa:</span>
+                                                <div className="flex items-baseline gap-1">
+                                                    <span className="text-lg font-bold text-primary">
                                                         {formatCurrency(summary.totalAmount)}
                                                     </span>
                                                     <span className="text-xs text-primary/70">so'm</span>
                                                 </div>
-                                            </td>
-                                            <td className="py-3 px-4 text-center">
-                                                <Badge variant="secondary" className="font-medium">{summary.paymentCount}</Badge>
-                                            </td>
-                                            <td className="py-3 px-4 text-sm text-muted-foreground hidden sm:table-cell">
-                                                {formatDate(summary.lastPaymentDate)}
-                                            </td>
-                                            <td className="py-3 px-4">
-                                                <div className="flex items-center justify-end gap-1">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => {
-                                                            setSelectedEmployee({
-                                                                name: summary.employeeName,
-                                                                id: summary.employeeId
-                                                            });
-                                                        }}
-                                                        className="gap-1 text-muted-foreground hover:text-primary hover:bg-primary/10"
-                                                        title="To'lovlarni ko'rish"
-                                                    >
-                                                        <Receipt className="h-4 w-4" />
-                                                        <span className="hidden lg:inline text-xs">Ko'rish</span>
-                                                    </Button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
+                                            </div>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-sm text-muted-foreground">Oxirgi to'lov:</span>
+                                                <span className="text-sm text-foreground">
+                                                    {formatDate(summary.lastPaymentDate)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
                     )}
                 </CardContent>
             </Card>
