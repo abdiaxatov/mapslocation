@@ -1,51 +1,29 @@
 import * as admin from 'firebase-admin';
 
-// Helper to safely parse private key
-// Helper to safely parse private key
-const getPrivateKey = (key: string | undefined) => {
-    if (!key) return undefined;
-
-    // 1. Remove surrounding quotes if any
-    let cleanKey = key;
-    if (cleanKey.startsWith('"') && cleanKey.endsWith('"')) {
-        cleanKey = cleanKey.slice(1, -1);
-    }
-
-    // 2. Normalize standard tags
-    const beginTag = "-----BEGIN PRIVATE KEY-----";
-    const endTag = "-----END PRIVATE KEY-----";
-
-    const beginIdx = cleanKey.indexOf(beginTag);
-    const endIdx = cleanKey.indexOf(endTag);
-
-    if (beginIdx === -1 || endIdx === -1) {
-        // Fallback
-        return cleanKey.replace(/\\n/g, '\n').trim();
-    }
-
-    // 3. Extract the body
-    let body = cleanKey.substring(beginIdx + beginTag.length, endIdx);
-
-    // 4. Sanitize body: remove literal \n, real newlines, and spaces
-    body = body.replace(/\\n/g, '').replace(/\s+/g, '');
-
-    // 5. Reconstruct standard PEM format
-    return `${beginTag}\n${body}\n${endTag}`;
-};
-
 if (!admin.apps.length) {
     try {
-        admin.initializeApp({
-            credential: admin.credential.cert({
-                projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-                clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-                privateKey: getPrivateKey(process.env.FIREBASE_PRIVATE_KEY),
-            }),
-        });
+        const serviceAccount = {
+            projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+            clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+            // Handle both quoted and unquoted keys, and standard \n escapes
+            privateKey: process.env.FIREBASE_PRIVATE_KEY
+                ? process.env.FIREBASE_PRIVATE_KEY.replace(/^"|"$/g, '').replace(/\\n/g, '\n')
+                : undefined,
+        };
+
+        if (serviceAccount.privateKey) {
+            admin.initializeApp({
+                credential: admin.credential.cert(serviceAccount),
+            });
+        } else {
+            console.warn("FIREBASE_PRIVATE_KEY is missing, skipping admin init");
+        }
     } catch (error) {
-        console.error("Firebase Admin Initialization Error:", error);
+        console.error("Firebase Admin Init Error:", error);
     }
 }
 
-export const adminAuth = admin.auth();
-export const adminDb = admin.firestore();
+// Export safely - check if app exists before getting services
+// This prevents build-time crashes if init failed
+export const adminAuth = admin.apps.length ? admin.auth() : null;
+export const adminDb = admin.apps.length ? admin.firestore() : null;

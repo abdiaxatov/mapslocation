@@ -3,6 +3,10 @@ import { adminAuth, adminDb } from "@/lib/firebase-admin";
 
 export async function POST(request: Request) {
     try {
+        if (!adminAuth || !adminDb) {
+            throw new Error("Firebase Admin not initialized");
+        }
+
         const { email, password, firstName, lastName, profession, role } = await request.json();
 
         // Create user in Firebase Auth
