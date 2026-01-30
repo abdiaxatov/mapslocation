@@ -43,6 +43,13 @@ export default function AddEmployeeDialog({ onSuccess }: AddEmployeeDialogProps)
   });
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate password length
+    if (formData.password.length < 6) {
+      toast.error("Parol kamida 6 ta belgidan iborat bo'lishi kerak");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -158,7 +165,6 @@ export default function AddEmployeeDialog({ onSuccess }: AddEmployeeDialogProps)
               required
               minLength={6}
               className="h-11 bg-secondary border-border text-foreground placeholder:text-muted-foreground"
-              className="h-11 bg-secondary border-border text-foreground placeholder:text-muted-foreground"
             />
           </div>
           <div className="space-y-2">
@@ -187,6 +193,7 @@ export default function AddEmployeeDialog({ onSuccess }: AddEmployeeDialogProps)
               onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
               className="h-11 bg-secondary border-border text-foreground placeholder:text-muted-foreground"
             />
+            <p className="text-xs text-muted-foreground">Ixtiyoriy. Format: +998901234567</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="role" className="text-foreground text-sm flex items-center gap-2">

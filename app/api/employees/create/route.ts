@@ -11,12 +11,16 @@ export async function POST(request: Request) {
 
         const { email, password, firstName, lastName, profession, role, phoneNumber } = await request.json();
 
+        // Validate phone number format if provided (must be E.164 format for Firebase Auth)
+        const isValidPhoneFormat = phoneNumber && phoneNumber.startsWith('+') && phoneNumber.length >= 10;
+
         // Create user in Firebase Auth
         const userRecord = await adminAuth.createUser({
             email,
             password,
             displayName: `${firstName} ${lastName}`,
-            phoneNumber: phoneNumber || undefined, // Only pass if provided
+            // Only pass phoneNumber to Auth if it's in valid E.164 format
+            ...(isValidPhoneFormat && { phoneNumber }),
         });
 
         // Create user document in Firestore
