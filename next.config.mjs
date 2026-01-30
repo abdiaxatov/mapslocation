@@ -6,6 +6,7 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  turbopack: {},
 }
 
 import withPWAInit from "@ducanh2912/next-pwa";
