@@ -145,6 +145,20 @@ export default function AdminDashboard() {
     setSidebarOpen(false);
     if (employee.currentLocation && employee.locationEnabled) {
       toast.success(`${employee.firstName} joylashuviga o'tildi`);
+      // Automatically trigger routing for the "ideal" experience
+      handleRouteSelect(employee);
+    }
+  };
+
+  const handleRouteSelect = (employee: UserData) => {
+    if (employee.currentLocation && employee.locationEnabled) {
+      if (typeof window !== "undefined" && window.setMapRoute) {
+        window.setMapRoute(employee.currentLocation.lat, employee.currentLocation.lng);
+        setSidebarOpen(false);
+        toast.success(`${employee.firstName} tomonga yo'l chizildi`);
+      } else {
+        toast.error("Xarita hali yuklanmagan yoki marshrutlash xizmati faol emas");
+      }
     }
   };
 
@@ -260,6 +274,7 @@ export default function AdminDashboard() {
           <EmployeeList
             employees={employees}
             onSelectEmployee={handleEmployeeSelect}
+            onSelectRoute={handleRouteSelect}
             selectedEmployee={selectedEmployee}
             currentUserId={user?.uid}
           />

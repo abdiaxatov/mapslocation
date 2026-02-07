@@ -12,6 +12,7 @@ import {
 } from "@pbe/react-yandex-maps";
 import { Loader2, Target, Navigation2, X } from "lucide-react";
 import type { UserData } from "@/contexts/auth-context";
+import { toast } from "sonner";
 
 interface LocationMapProps {
     employees: UserData[];
@@ -67,42 +68,85 @@ export default function LocationMap({
 
     // Professional Routing with ymaps.multiRouter
     useEffect(() => {
+        if (!map || !ymaps) return;
+
+        console.log("Initializing window.setMapRoute...");
+
         window.setMapRoute = (targetLat: number, targetLng: number) => {
-            if (!map || !ymaps) return;
+            console.log("setMapRoute triggered for:", targetLat, targetLng);
+
+            // SUPER DEFENSIVE CHECKS
+            if (!ymaps || !map) {
+                console.error("Map or YMaps instance is MISSING");
+                return;
+            }
+
+            if (!ymaps.multiRouter || typeof ymaps.multiRouter.MultiRoute === 'undefined') {
+                console.error("MultiRouter module is not available on ymaps object");
+                toast.error("Xarita xizmati hali to'liq yuklanmadi. Iltimos 2-3 soniya kuting.");
+                return;
+            }
 
             if (currentRouteRef.current) {
-                map.geoObjects.remove(currentRouteRef.current);
+                try {
+                    map.geoObjects.remove(currentRouteRef.current);
+                } catch (e) {
+                    console.warn("Could not remove old route:", e);
+                }
             }
 
             const currentLoc = myLocationRef.current;
             const startPoint = currentLoc ? [currentLoc.lat, currentLoc.lng] : [DEFAULT_CENTER.lat, DEFAULT_CENTER.lng];
 
-            const multiRoute = new ymaps.multiRouter.MultiRoute(
-                {
-                    referencePoints: [startPoint, [targetLat, targetLng]],
-                    params: { routingMode: "auto" }
-                },
-                {
-                    routeStrokeColor: "#3b82f6",
-                    routeActiveStrokeColor: "#2563eb",
-                    pinIconFillColor: "#3b82f6",
-                    boundsAutoApply: true
-                }
-            );
+            try {
+                console.log("Creating new MultiRoute instance...");
+                const MultiRouteConstructor = ymaps.multiRouter.MultiRoute;
+                const multiRoute = new MultiRouteConstructor(
+                    {
+                        referencePoints: [startPoint, [targetLat, targetLng]],
+                        params: { routingMode: "auto" }
+                    },
+                    {
+                        routeStrokeColor: "#3b82f6",
+                        routeStrokeWidth: 5,
+                        routeActiveStrokeColor: "#2563eb",
+                        routeActiveStrokeWidth: 6,
+                        wayPointStartIconColor: "#3b82f6",
+                        wayPointFinishIconColor: "#ef4444",
+                        boundsAutoApply: true
+                    }
+                );
 
-            map.geoObjects.add(multiRoute);
-            currentRouteRef.current = multiRoute;
-            setRouteActive(true);
+                map.geoObjects.add(multiRoute);
+                currentRouteRef.current = multiRoute;
+                setRouteActive(true);
 
-            multiRoute.model.events.add("requestsuccess", () => {
-                const bounds = multiRoute.getBounds();
-                if (bounds) {
-                    map.setBounds(bounds, { checkZoomRange: true, duration: 800 });
-                }
-            });
+                multiRoute.model.events.add("requestsuccess", () => {
+                    const activeRoute = multiRoute.getActiveRoute();
+                    if (activeRoute) {
+                        const distance = activeRoute.properties.get("distance").text;
+                        const duration = activeRoute.properties.get("duration").text;
+                        toast.success(`Marshrut: ${distance}, ${duration}`);
+                    }
+                    const bounds = multiRoute.getBounds();
+                    if (bounds) {
+                        map.setBounds(bounds, { checkZoomRange: true, duration: 800 });
+                    }
+                });
+
+                multiRoute.model.events.add("requestfail", (event: any) => {
+                    console.error("Route request failed:", event.get("error"));
+                    toast.error("Marshrutni qurib bo'lmadi");
+                });
+
+            } catch (err) {
+                console.error("FATAL Routing Error:", err);
+                toast.error("Marshrut tizimida kutilmagan xatolik");
+            }
         };
 
         return () => {
+            console.log("Cleaning up window.setMapRoute");
             delete (window as any).setMapRoute;
         };
     }, [map, ymaps]);
@@ -163,7 +207,7 @@ export default function LocationMap({
                 </div>
             )}
 
-            {/* Floating Custom Controls to REPLACE 403-triggering native ones */}
+            {/* Custom controls */}
             {apiLoaded && (
                 <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
                     <button
@@ -186,9 +230,10 @@ export default function LocationMap({
                 </div>
             )}
 
-            <YMaps query={{ apikey: apiKey, lang: "uz_UZ", coordorder: "latlong" }}>
+            <YMaps query={{ apikey: apiKey, lang: "uz_UZ", coordorder: "latlong", load: "package.full" }}>
                 <Map
                     onLoad={(y) => {
+                        console.log("Yandex Maps API with package.full loaded");
                         setYmaps(y);
                         setApiLoaded(true);
                     }}
@@ -199,22 +244,18 @@ export default function LocationMap({
                     options={{
                         suppressMapOpenBlock: true,
                         yandexMapDisablePoiInteractivity: true,
-                        yandexMapAutoReverseGeocoding: false, // CRITICAL: Stop 403 errors
+                        yandexMapAutoReverseGeocoding: false,
                     }}
                 >
-                    {/* Only 403-safe native controls */}
                     <FullscreenControl options={{ position: { right: 10, bottom: 40 } }} />
                     <ZoomControl options={{ position: { right: 10, top: 120 } }} />
                     <TypeSelector options={{ position: { right: 10, top: 10 } }} />
                     <TrafficControl options={{ position: { right: 10, top: 50 } }} />
 
-                    {/* User Marker */}
                     {myLocation && (
                         <Placemark
                             geometry={[myLocation.lat, myLocation.lng]}
-                            properties={{
-                                balloonContent: "Sizning joyingiz"
-                            }}
+                            properties={{ balloonContent: "Sizning joyingiz" }}
                             options={{
                                 preset: 'islands#blueCircleDotIconWithCaption',
                                 iconCaption: 'Men',
@@ -235,29 +276,30 @@ export default function LocationMap({
                             <Placemark
                                 key={employee.uid}
                                 geometry={[loc.lat, loc.lng]}
+                                onClick={() => {
+                                    if (typeof window !== "undefined" && window.setMapRoute) {
+                                        window.setMapRoute(loc.lat, loc.lng);
+                                    }
+                                }}
                                 properties={{
                                     balloonContentHeader: `<b>${employee.firstName} ${employee.lastName}</b>`,
                                     balloonContentBody: `
-                    <div style="font-family: sans-serif; min-width: 220px; padding-top: 10px;">
-                      <p><b>Kasbi:</b> ${employee.profession}</p>
-                      <p><b>Status:</b> ${isOnline ? "Online" : "Offline"}</p>
-                      ${!isOnline ? `<p style="font-size: 11px;">Oxirgi faollik: ${formatLastSeen(employee.currentLocation.timestamp)}</p>` : ""}
-                      
-                      <button onclick="setMapRoute(${loc.lat}, ${loc.lng})" style="
-                        width: 100%; padding: 12px; background: #2563eb; color: white; border: none;
-                        border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px;
-                        font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;
-                      ">
-                        MARSHRUT CHIZISH
-                      </button>
-                    </div>
-                  `,
+                                        <div style="font-family: sans-serif; min-width: 200px; padding: 5px;">
+                                            <p><b>Kasbi:</b> ${employee.profession}</p>
+                                            <p><b>Status:</b> ${isOnline ? "Online" : "Offline"}</p>
+                                            <button onclick="setMapRoute(${loc.lat}, ${loc.lng})" style="
+                                                width: 100%; padding: 10px; background: #2563eb; color: white;
+                                                border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px;
+                                            ">
+                                                YO'L CHIZISH
+                                            </button>
+                                        </div>
+                                    `
                                 }}
                                 options={{
                                     preset: iconPreset,
                                     iconColor: markerColor,
                                     balloonMaxWidth: 300,
-                                    hideIconOnBalloonOpen: false,
                                 }}
                             />
                         );

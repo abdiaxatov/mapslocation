@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { MapPin, User, Briefcase, Wifi, WifiOff, Search, Users, Pencil, Trash2, Shield, Phone } from "lucide-react";
+import { MapPin, User, Briefcase, Wifi, WifiOff, Search, Users, Pencil, Trash2, Shield, Phone, Navigation2 } from "lucide-react";
 import { useState } from "react";
 import { doc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -25,11 +25,12 @@ import {
 interface EmployeeListProps {
   employees: UserData[];
   onSelectEmployee?: (employee: UserData) => void;
+  onSelectRoute?: (employee: UserData) => void;
   selectedEmployee?: UserData | null;
   currentUserId?: string;
 }
 
-export default function EmployeeList({ employees, onSelectEmployee, selectedEmployee, currentUserId }: EmployeeListProps) {
+export default function EmployeeList({ employees, onSelectEmployee, onSelectRoute, selectedEmployee, currentUserId }: EmployeeListProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [editEmployee, setEditEmployee] = useState<UserData | null>(null);
   const [deleteEmployee, setDeleteEmployee] = useState<UserData | null>(null);
@@ -144,6 +145,20 @@ export default function EmployeeList({ employees, onSelectEmployee, selectedEmpl
         </button>
 
         <div className="flex items-center gap-1 shrink-0">
+          {employee.currentLocation && employee.locationEnabled && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelectRoute?.(employee);
+              }}
+              className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
+              title="Marshrut chizish"
+            >
+              <Navigation2 className="h-4 w-4" />
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="icon"
