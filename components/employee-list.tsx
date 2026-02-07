@@ -85,26 +85,26 @@ export default function EmployeeList({ employees, onSelectEmployee, onSelectRout
         <button
           type="button"
           onClick={() => onSelectEmployee?.(employee)}
-          className="flex-1 min-w-0 text-left cursor-pointer"
+          className="flex-1 min-w-0 text-left cursor-pointer group/info"
         >
-          <div className="flex items-center justify-between mb-1.5 gap-1">
-            <div className="flex items-center gap-2 min-w-0 flex-1 max-w-[70%]">
-              <span className="font-semibold text-foreground truncate text-sm sm:text-base" title={`${employee.firstName} ${employee.lastName}`}>
+          <div className="flex items-center justify-between mb-1.5 gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="font-semibold text-foreground truncate text-base sm:text-lg" title={`${employee.firstName} ${employee.lastName}`}>
                 {employee.firstName} {employee.lastName}
               </span>
               {employee.uid === currentUserId && (
-                <Badge variant="secondary" className="text-[10px] bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 px-1.5 h-5 border-0 shrink-0">
+                <Badge variant="secondary" className="text-[10px] bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 px-2 h-5 border-0 shrink-0 font-bold">
                   Siz
                 </Badge>
               )}
               {employee.role === "admin" && (
-                <Badge variant="outline" className="text-[10px] border-blue-500/50 text-blue-500 h-5 px-1.5 shrink-0">
+                <Badge variant="outline" className="text-[10px] border-blue-500/50 text-blue-500 h-5 px-1.5 shrink-0 font-bold hidden sm:flex">
                   <Shield className="h-2.5 w-2.5 mr-0.5" />
                   Admin
                 </Badge>
               )}
             </div>
-            <div className="shrink-0 ml-2">
+            <div className="shrink-0">
               {employee.locationEnabled ? (
                 <span className="relative flex h-2.5 w-2.5">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -116,7 +116,7 @@ export default function EmployeeList({ employees, onSelectEmployee, onSelectRout
             </div>
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1 pr-2">
             <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
               <Briefcase className="h-3 w-3 shrink-0" />
               <span className="truncate">{employee.profession}</span>
@@ -126,63 +126,63 @@ export default function EmployeeList({ employees, onSelectEmployee, onSelectRout
               <a
                 href={`tel:${employee.phoneNumber}`}
                 onClick={(e) => e.stopPropagation()}
-                className="flex items-center gap-1.5 text-xs sm:text-sm text-primary hover:text-primary/80 hover:underline transition-colors w-fit font-medium"
+                className="flex items-center gap-1.5 text-xs sm:text-sm text-primary hover:text-primary/80 transition-colors w-fit font-medium"
               >
                 <Phone className="h-3 w-3 shrink-0" />
-                <span>{employee.phoneNumber}</span>
+                <span className="truncate max-w-[120px] sm:max-w-none">{employee.phoneNumber}</span>
               </a>
             )}
 
             {employee.currentLocation && (
-              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                <MapPin className="h-3 w-3 shrink-0" />
+              <div className="flex items-center gap-1.5 text-xs sm:text-sm text-foreground/80">
+                <MapPin className="h-3 w-3 shrink-0 text-muted-foreground" />
                 <span className="truncate">
-                  {employee.currentLocation.lat.toFixed(4)}, {employee.currentLocation.lng.toFixed(4)}
+                  {employee.currentLocation.lat.toFixed(6)}, {employee.currentLocation.lng.toFixed(6)}
                 </span>
               </div>
             )}
           </div>
         </button>
 
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 ml-auto pl-2">
           {employee.currentLocation && employee.locationEnabled && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="icon"
               onClick={(e) => {
                 e.stopPropagation();
                 onSelectRoute?.(employee);
               }}
-              className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
+              className="h-8 w-8 sm:h-9 sm:w-9 text-blue-500 hover:text-blue-600 border-blue-500/20 hover:bg-blue-500/10"
               title="Marshrut chizish"
             >
-              <Navigation2 className="h-4 w-4" />
+              <Navigation2 className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
             </Button>
           )}
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
               setEditEmployee(employee);
             }}
-            className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-secondary/80"
+            className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-foreground border-border hover:bg-secondary/80"
             title="Tahrirlash"
           >
-            <Pencil className="h-4 w-4" />
+            <Pencil className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
           </Button>
           <Button
-            variant="ghost"
+            variant="outline"
             size="icon"
             onClick={(e) => {
               e.stopPropagation();
               setDeleteEmployee(employee);
             }}
             disabled={employee.uid === currentUserId}
-            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 disabled:opacity-30 disabled:cursor-not-allowed"
+            className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-destructive border-border hover:bg-destructive/10 disabled:opacity-30 disabled:cursor-not-allowed"
             title={employee.uid === currentUserId ? "O'zingizni o'chira olmaysiz" : "O'chirish"}
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
           </Button>
         </div>
       </div>

@@ -189,7 +189,7 @@ export default function AdminDashboard() {
               className="lg:hidden p-2 hover:bg-secondary rounded-lg transition-colors text-foreground"
               aria-label="Toggle sidebar"
             >
-              {sidebarOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
@@ -267,7 +267,7 @@ export default function AdminDashboard() {
             fixed lg:static inset-y-0 left-0 z-40 bg-card border-r border-border
             transform transition-transform duration-300 ease-in-out
             lg:transform-none mt-16 lg:mt-0
-            w-[280px] sm:w-[320px] flex flex-col
+            w-[96vw] max-w-[540px] sm:w-[500px] lg:w-[450px] flex flex-col shadow-2xl lg:shadow-none
             ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
           `}
         >
