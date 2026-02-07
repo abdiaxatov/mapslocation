@@ -267,7 +267,7 @@ export default function AdminDashboard() {
             fixed lg:static inset-y-0 left-0 z-40 bg-card border-r border-border
             transform transition-transform duration-300 ease-in-out
             lg:transform-none mt-16 lg:mt-0
-            w-[96vw] max-w-[540px] sm:w-[500px] lg:w-[450px] flex flex-col shadow-2xl lg:shadow-none
+            w-[96vw] max-w-[560px] sm:w-[500px] lg:w-[550px] flex flex-col shadow-2xl lg:shadow-none
             ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
           `}
         >
