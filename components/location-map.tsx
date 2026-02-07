@@ -8,9 +8,11 @@ import {
     FullscreenControl,
     ZoomControl,
     TypeSelector,
-    TrafficControl
+    TrafficControl,
+    SearchControl,
+    GeolocationControl
 } from "@pbe/react-yandex-maps";
-import { Loader2, Target, Navigation2, X } from "lucide-react";
+import { Loader2, Target, Navigation2, X, Search } from "lucide-react";
 import type { UserData } from "@/contexts/auth-context";
 import { toast } from "sonner";
 
@@ -207,28 +209,42 @@ export default function LocationMap({
                 </div>
             )}
 
-            {/* Custom controls */}
-            {apiLoaded && (
-                <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
-                    <button
-                        onClick={focusMe}
-                        className="p-3 bg-white/90 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg hover:bg-white transition-all active:scale-95 text-blue-600"
-                        title="Mening joylashuvim"
-                    >
-                        <Target className="w-5 h-5" />
-                    </button>
+            <div className="absolute bottom-6 left-4 z-10 flex flex-col gap-3">
+                <button
+                    onClick={() => {
+                        // Focus search input if possible or show toast
+                        const searchInput = document.querySelector('.ymaps-2-1-79-searchbox-input__input') as HTMLInputElement;
+                        if (searchInput) {
+                            searchInput.focus();
+                        } else {
+                            toast.info("Qidiruv paneli tepadagi markazda joylashgan");
+                        }
+                    }}
+                    className="p-3 bg-white/95 backdrop-blur-md border border-gray-200 rounded-2xl shadow-xl hover:bg-white transition-all active:scale-90 text-slate-700 group/search"
+                    title="Qidirish"
+                >
+                    <Search className="w-6 h-6 group-hover/search:scale-110 transition-transform" />
+                </button>
 
-                    {routeActive && (
-                        <button
-                            onClick={clearRoute}
-                            className="p-3 bg-red-500/90 backdrop-blur-md border border-red-600 rounded-xl shadow-lg hover:bg-red-500 transition-all active:scale-95 text-white flex items-center gap-2 font-bold text-xs"
-                        >
-                            <X className="w-4 h-4" />
-                            TOZALASH
-                        </button>
-                    )}
-                </div>
-            )}
+                <button
+                    onClick={focusMe}
+                    className="p-3 bg-white/95 backdrop-blur-md border border-gray-200 rounded-2xl shadow-xl hover:bg-white transition-all active:scale-90 text-blue-600 group/btn"
+                    title="Mening joylashuvim"
+                >
+                    <Target className="w-6 h-6 group-active/btn:rotate-12 transition-transform" />
+                </button>
+
+                {routeActive && (
+                    <button
+                        onClick={clearRoute}
+                        className="p-3 bg-red-500/90 backdrop-blur-md border border-red-600 rounded-2xl shadow-xl hover:bg-red-500 transition-all active:scale-90 text-white flex items-center gap-2 font-bold text-xs"
+                    >
+                        <X className="w-5 h-5" />
+                        TOZALASH
+                    </button>
+                )}
+            </div>
+        
 
             <YMaps query={{ apikey: apiKey, lang: "uz_UZ", coordorder: "latlong", load: "package.full" }}>
                 <Map
@@ -247,10 +263,20 @@ export default function LocationMap({
                         yandexMapAutoReverseGeocoding: false,
                     }}
                 >
-                    <FullscreenControl options={{ position: { right: 10, bottom: 40 } }} />
-                    <ZoomControl options={{ position: { right: 10, top: 120 } }} />
-                    <TypeSelector options={{ position: { right: 10, top: 10 } }} />
-                    <TrafficControl options={{ position: { right: 10, top: 50 } }} />
+                    {/* Native controls optimized for mobile/desktop spacing */}
+                    <FullscreenControl options={{ position: { right: 10, top: 10 } }} />
+                    <TypeSelector options={{ position: { right: 10, top: 50 } }} />
+                    <TrafficControl options={{ position: { right: 10, top: 90 } }} />
+
+                    <ZoomControl options={{ position: { right: 10, bottom: 100 } }} />
+                    <GeolocationControl options={{ position: { right: 10, bottom: 180 } }} />
+
+                    <SearchControl options={{
+                        float: 'none',
+                        position: { top: 10, left: 'center' },
+                        maxWidth: [200, 300, 450],
+                        placeholderContent: "Manzilni qidiring..."
+                    }} />
 
                     {myLocation && (
                         <Placemark
@@ -287,12 +313,24 @@ export default function LocationMap({
                                         <div style="font-family: sans-serif; min-width: 200px; padding: 5px;">
                                             <p><b>Kasbi:</b> ${employee.profession}</p>
                                             <p><b>Status:</b> ${isOnline ? "Online" : "Offline"}</p>
-                                            <button onclick="setMapRoute(${loc.lat}, ${loc.lng})" style="
-                                                width: 100%; padding: 10px; background: #2563eb; color: white;
-                                                border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px;
-                                            ">
-                                                YO'L CHIZISH
-                                            </button>
+                                            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+                                                <button onclick="setMapRoute(${loc.lat}, ${loc.lng})" style="
+                                                    width: 100%; padding: 10px; background: #2563eb; color: white;
+                                                    border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
+                                                ">
+                                                    YO'L CHIZISH
+                                                </button>
+                                                <a href="https://yandex.uz/maps/?rtext=${myLocation ? `${myLocation.lat},${myLocation.lng}` : ''}~${loc.lat},${loc.lng}&rtt=auto" 
+                                                   target="_blank" 
+                                                   rel="noopener noreferrer"
+                                                   style="
+                                                    width: 100%; padding: 10px; background: #059669; color: white;
+                                                    border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
+                                                    text-decoration: none; text-align: center; font-size: 13px;
+                                                ">
+                                                    NAVIGATORDA OCHISH
+                                                </a>
+                                            </div>
                                         </div>
                                     `
                                 }}
