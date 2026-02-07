@@ -1,285 +1,269 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+import { useMemo, useState, useCallback, useEffect, useRef } from "react";
+import {
+    YMaps,
+    Map,
+    Placemark,
+    FullscreenControl,
+    ZoomControl,
+    TypeSelector,
+    TrafficControl
+} from "@pbe/react-yandex-maps";
+import { Loader2, Target, Navigation2, X } from "lucide-react";
 import type { UserData } from "@/contexts/auth-context";
 
 interface LocationMapProps {
-  employees: UserData[];
-  center?: [number, number];
-  zoom?: number;
-  selectedEmployee?: UserData | null;
-  currentUserId?: string;
+    employees: UserData[];
+    center?: { lat: number; lng: number };
+    zoom?: number;
+    selectedEmployee?: UserData | null;
+    currentUserId?: string;
 }
 
-const createMarkerIcon = (isOnline: boolean, isSelected: boolean, isMe: boolean, name: string) => {
-  const size = isSelected ? 48 : (isMe ? 44 : 40);
-  const bgColor = isOnline ? "#4ade80" : "#64748b";
-  const borderColor = isSelected ? "#ffffff" : (isMe ? "#3b82f6" : "#1e1e24"); // Blue border for Me
-  const shadowColor = isMe ? "rgba(59, 130, 246, 0.5)" : "rgba(0,0,0,0.4)";
+const DEFAULT_CENTER = { lat: 41.2995, lng: 69.2401 };
 
-  return L.divIcon({
-    className: "custom-marker",
-    html: `
-      <div style="position: relative; display: flex; flex-col; align-items: center; justify-content: center;">
-        <div style="
-          width: ${size}px;
-          height: ${size}px;
-          border-radius: 50%;
-          background: ${bgColor};
-          border: 3px solid ${borderColor};
-          box-shadow: 0 4px 12px ${shadowColor};
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          transform: ${isSelected ? 'scale(1.1)' : 'scale(1)'};
-          transition: transform 0.2s ease;
-          z-index: ${isMe ? 30 : 10};
-        ">
-          ${isMe ?
-        `<svg width="${size * 0.5}" height="${size * 0.5}" viewBox="0 0 24 24" fill="${borderColor}" stroke="white" stroke-width="2">
-               <circle cx="12" cy="12" r="10" />
-               <circle cx="12" cy="12" r="3" fill="white" />
-             </svg>`
-        :
-        `<svg width="${size * 0.5}" height="${size * 0.5}" viewBox="0 0 24 24" fill="${borderColor}">
-               <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-             </svg>`
-      }
-        </div>
-        <div style="
-          position: absolute;
-          top: ${size + 4}px;
-          left: 50%;
-          transform: translateX(-50%);
-          background: rgba(30, 30, 36, 0.9);
-          padding: 4px 8px;
-          border-radius: 6px;
-          border: 1px solid #2a2a32;
-          color: #f8fafc;
-          font-size: 12px;
-          font-weight: 600;
-          white-space: nowrap;
-          z-index: 20;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        ">
-          ${isMe ? "Siz" : name}
-        </div>
-      </div>
-    `,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size],
-    popupAnchor: [0, -size],
-  });
-};
-
-const DEFAULT_CENTER: [number, number] = [41.2995, 69.2401];
+declare global {
+    interface Window {
+        setMapRoute: (lat: number, lng: number) => void;
+    }
+}
 
 export default function LocationMap({
-  employees,
-  center = DEFAULT_CENTER,
-  zoom = 12,
-  selectedEmployee,
-  currentUserId
+    employees,
+    center = DEFAULT_CENTER,
+    zoom = 13,
+    selectedEmployee,
+    currentUserId,
 }: LocationMapProps) {
-  const mapRef = useRef<HTMLDivElement>(null);
-  const mapInstanceRef = useRef<L.Map | null>(null);
-  const markersRef = useRef<Map<string, L.Marker>>(new Map());
+    const [map, setMap] = useState<any>(null);
+    const [ymaps, setYmaps] = useState<any>(null);
+    const [apiLoaded, setApiLoaded] = useState(false);
+    const [myLocation, setMyLocation] = useState<{ lat: number; lng: number } | null>(null);
+    const [routeActive, setRouteActive] = useState(false);
+    const apiKey = process.env.NEXT_PUBLIC_YANDEX_MAPS_API_KEY;
 
-  useEffect(() => {
-    if (!mapRef.current || mapInstanceRef.current) return;
+    const currentRouteRef = useRef<any>(null);
+    const myLocationRef = useRef<{ lat: number; lng: number } | null>(null);
 
-    // Initialize map with dark theme
-    mapInstanceRef.current = L.map(mapRef.current, {
-      zoomControl: false
-    }).setView(center, zoom);
+    // Track location silently using browser API to avoid 403 geocoding errors
+    useEffect(() => {
+        if ("geolocation" in navigator) {
+            const watchId = navigator.geolocation.watchPosition(
+                (pos) => {
+                    const newLoc = {
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude
+                    };
+                    setMyLocation(newLoc);
+                    myLocationRef.current = newLoc;
+                },
+                (err) => console.warn("Geo:", err.message),
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 10000 }
+            );
+            return () => navigator.geolocation.clearWatch(watchId);
+        }
+    }, []);
 
-    // Add zoom control to bottom right
-    L.control.zoom({ position: 'bottomright' }).addTo(mapInstanceRef.current);
+    // Professional Routing with ymaps.multiRouter
+    useEffect(() => {
+        window.setMapRoute = (targetLat: number, targetLng: number) => {
+            if (!map || !ymaps) return;
 
-    // Dark tile layer
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-      maxZoom: 19
-    }).addTo(mapInstanceRef.current);
+            if (currentRouteRef.current) {
+                map.geoObjects.remove(currentRouteRef.current);
+            }
 
-    return () => {
-      if (mapInstanceRef.current) {
-        mapInstanceRef.current.remove();
-        mapInstanceRef.current = null;
-      }
+            const currentLoc = myLocationRef.current;
+            const startPoint = currentLoc ? [currentLoc.lat, currentLoc.lng] : [DEFAULT_CENTER.lat, DEFAULT_CENTER.lng];
+
+            const multiRoute = new ymaps.multiRouter.MultiRoute(
+                {
+                    referencePoints: [startPoint, [targetLat, targetLng]],
+                    params: { routingMode: "auto" }
+                },
+                {
+                    routeStrokeColor: "#3b82f6",
+                    routeActiveStrokeColor: "#2563eb",
+                    pinIconFillColor: "#3b82f6",
+                    boundsAutoApply: true
+                }
+            );
+
+            map.geoObjects.add(multiRoute);
+            currentRouteRef.current = multiRoute;
+            setRouteActive(true);
+
+            multiRoute.model.events.add("requestsuccess", () => {
+                const bounds = multiRoute.getBounds();
+                if (bounds) {
+                    map.setBounds(bounds, { checkZoomRange: true, duration: 800 });
+                }
+            });
+        };
+
+        return () => {
+            delete (window as any).setMapRoute;
+        };
+    }, [map, ymaps]);
+
+    const clearRoute = () => {
+        if (map && currentRouteRef.current) {
+            map.geoObjects.remove(currentRouteRef.current);
+            currentRouteRef.current = null;
+            setRouteActive(false);
+            if (myLocation) {
+                map.setCenter([myLocation.lat, myLocation.lng], 14, { duration: 1000 });
+            } else {
+                map.setCenter([DEFAULT_CENTER.lat, DEFAULT_CENTER.lng], 13, { duration: 1000 });
+            }
+        }
     };
-  }, [center, zoom]);
 
-  useEffect(() => {
-    if (!mapInstanceRef.current) return;
+    const focusMe = () => {
+        if (map && myLocation) {
+            map.setCenter([myLocation.lat, myLocation.lng], 16, { duration: 1200 });
+        }
+    };
 
-    // Clear existing markers
-    for (const marker of markersRef.current.values()) {
-      marker.remove();
-    }
-    markersRef.current.clear();
+    useEffect(() => {
+        if (map && selectedEmployee?.currentLocation) {
+            map.setCenter([selectedEmployee.currentLocation.lat, selectedEmployee.currentLocation.lng], 16, {
+                duration: 1000,
+            });
+        }
+    }, [map, selectedEmployee]);
 
-    // Add markers for each employee with location
-    for (const employee of employees) {
-      if (employee.currentLocation) {
-        const isSelected = selectedEmployee?.uid === employee.uid;
-        const isMe = currentUserId === employee.uid;
+    const mapState = useMemo(() => ({
+        center: center ? [center.lat, center.lng] : [DEFAULT_CENTER.lat, DEFAULT_CENTER.lng],
+        zoom: zoom,
+        controls: [],
+    }), [center, zoom]);
 
-        const marker = L.marker(
-          [employee.currentLocation.lat, employee.currentLocation.lng],
-          { icon: createMarkerIcon(employee.locationEnabled ?? false, isSelected, isMe, employee.firstName) }
-        ).addTo(mapInstanceRef.current);
-
-        // Format timestamp
-        let lastSeenText = "Noma'lum";
-        if (employee.currentLocation.timestamp) {
-          try {
-            const ts = employee.currentLocation.timestamp as any;
-            const date = ts.toDate ? ts.toDate() : new Date(ts);
-            lastSeenText = new Intl.DateTimeFormat('uz-UZ', {
-              hour: '2-digit',
-              minute: '2-digit',
-              day: '2-digit',
-              month: '2-digit'
+    const formatLastSeen = (timestamp: any) => {
+        if (!timestamp) return "Noma'lum";
+        try {
+            const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            return new Intl.DateTimeFormat("uz-UZ", {
+                hour: "2-digit",
+                minute: "2-digit",
+                day: "2-digit",
+                month: "2-digit",
             }).format(date);
-          } catch (e) {
-            console.error("Date formatting error", e);
-          }
+        } catch (e) {
+            return "Noma'lum";
         }
+    };
 
-        marker.bindPopup(`
-          <div style="
-            min-width: 180px; 
-            font-family: system-ui, -apple-system, sans-serif;
-            padding: 4px;
-          ">
-            <div style="
-              display: flex;
-              align-items: center;
-              gap: 10px;
-              margin-bottom: 10px;
-            ">
-              <div style="
-                width: 36px;
-                height: 36px;
-                border-radius: 50%;
-                background: ${employee.locationEnabled ? '#4ade8020' : '#64748b20'};
-                display: flex;
-                align-items: center;
-                justify-content: center;
-              ">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="${employee.locationEnabled ? '#4ade80' : '#64748b'}">
-                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-                </svg>
-              </div>
-              <div>
-                <h3 style="margin: 0; font-size: 14px; font-weight: 600; color: #f8fafc;">
-                  ${employee.firstName} ${employee.lastName}
-                </h3>
-                <p style="margin: 2px 0 0; font-size: 12px; color: #94a3b8;">
-                  ${employee.profession}
-                </p>
-              </div>
-            </div>
-            <div style="
-              display: flex;
-              align-items: center;
-              gap: 6px;
-              padding: 8px 10px;
-              background: ${employee.locationEnabled ? '#4ade8015' : '#64748b15'};
-              border-radius: 8px;
-            ">
-              <div style="
-                width: 8px;
-                height: 8px;
-                border-radius: 50%;
-                background: ${employee.locationEnabled ? '#4ade80' : '#64748b'};
-              "></div>
-              <span style="font-size: 12px; color: ${employee.locationEnabled ? '#4ade80' : '#94a3b8'};">
-                ${employee.locationEnabled ? 'Online' : `Oxirgi: ${lastSeenText}`}
-              </span>
-            </div>
-          </div>
-        `, {
-          className: 'custom-popup'
-        });
+    return (
+        <div className="relative w-full h-full min-h-[500px] rounded-3xl overflow-hidden border border-border bg-secondary/5 group">
+            {!apiLoaded && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-background/50 backdrop-blur-md z-40">
+                    <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                </div>
+            )}
 
-        markersRef.current.set(employee.uid, marker);
-      }
-    }
+            {/* Floating Custom Controls to REPLACE 403-triggering native ones */}
+            {apiLoaded && (
+                <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
+                    <button
+                        onClick={focusMe}
+                        className="p-3 bg-white/90 backdrop-blur-md border border-gray-200 rounded-xl shadow-lg hover:bg-white transition-all active:scale-95 text-blue-600"
+                        title="Mening joylashuvim"
+                    >
+                        <Target className="w-5 h-5" />
+                    </button>
 
-    // Focus on selected employee
-    if (selectedEmployee?.currentLocation && selectedEmployee.locationEnabled && mapInstanceRef.current) {
-      mapInstanceRef.current.flyTo(
-        [selectedEmployee.currentLocation.lat, selectedEmployee.currentLocation.lng],
-        15,
-        { duration: 1 }
-      );
+                    {routeActive && (
+                        <button
+                            onClick={clearRoute}
+                            className="p-3 bg-red-500/90 backdrop-blur-md border border-red-600 rounded-xl shadow-lg hover:bg-red-500 transition-all active:scale-95 text-white flex items-center gap-2 font-bold text-xs"
+                        >
+                            <X className="w-4 h-4" />
+                            TOZALASH
+                        </button>
+                    )}
+                </div>
+            )}
 
-      const marker = markersRef.current.get(selectedEmployee.uid);
-      if (marker) {
-        marker.openPopup();
-      }
-    }
-  }, [employees, selectedEmployee]);
+            <YMaps query={{ apikey: apiKey, lang: "uz_UZ", coordorder: "latlong" }}>
+                <Map
+                    onLoad={(y) => {
+                        setYmaps(y);
+                        setApiLoaded(true);
+                    }}
+                    state={mapState}
+                    width="100%"
+                    height="100%"
+                    instanceRef={(ref) => setMap(ref)}
+                    options={{
+                        suppressMapOpenBlock: true,
+                        yandexMapDisablePoiInteractivity: true,
+                        yandexMapAutoReverseGeocoding: false, // CRITICAL: Stop 403 errors
+                    }}
+                >
+                    {/* Only 403-safe native controls */}
+                    <FullscreenControl options={{ position: { right: 10, bottom: 40 } }} />
+                    <ZoomControl options={{ position: { right: 10, top: 120 } }} />
+                    <TypeSelector options={{ position: { right: 10, top: 10 } }} />
+                    <TrafficControl options={{ position: { right: 10, top: 50 } }} />
 
-  return (
-    <>
-      <style jsx global>{`
-        .leaflet-popup-content-wrapper {
-          background: #1e1e24 !important;
-          border-radius: 12px !important;
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
-          border: 1px solid #2a2a32 !important;
-        }
-        .leaflet-popup-tip {
-          background: #1e1e24 !important;
-          border: 1px solid #2a2a32 !important;
-          border-top: none !important;
-          border-right: none !important;
-        }
-        .leaflet-popup-close-button {
-          color: #94a3b8 !important;
-        }
-        .leaflet-popup-close-button:hover {
-          color: #f8fafc !important;
-        }
-        .leaflet-control-zoom {
-          border: none !important;
-          background: transparent !important;
-        }
-        .leaflet-control-zoom a {
-          background: #1e1e24 !important;
-          color: #f8fafc !important;
-          border: 1px solid #2a2a32 !important;
-        }
-        .leaflet-control-zoom a:hover {
-          background: #2a2a32 !important;
-        }
-        .leaflet-control-attribution {
-          background: rgba(30, 30, 36, 0.8) !important;
-          color: #64748b !important;
-        }
-        .leaflet-control-attribution a {
-          color: #4ade80 !important;
-        }
-        .leaflet-pane {
-          z-index: 1 !important;
-        }
-        .leaflet-top, .leaflet-bottom {
-          z-index: 10 !important;
-        }
-        .leaflet-popup-pane {
-          z-index: 11 !important;
-        }
-      `}</style>
-      <div
-        ref={mapRef}
-        className="w-full h-full"
-        style={{ minHeight: "400px", background: "#0a0a0c" }}
-      />
-    </>
-  );
+                    {/* User Marker */}
+                    {myLocation && (
+                        <Placemark
+                            geometry={[myLocation.lat, myLocation.lng]}
+                            properties={{
+                                balloonContent: "Sizning joyingiz"
+                            }}
+                            options={{
+                                preset: 'islands#blueCircleDotIconWithCaption',
+                                iconCaption: 'Men',
+                                iconColor: '#3b82f6',
+                            }}
+                        />
+                    )}
+
+                    {employees.map((employee) => {
+                        const loc = employee.currentLocation;
+                        if (!loc || typeof loc.lat !== 'number' || typeof loc.lng !== 'number') return null;
+
+                        const isOnline = employee.locationEnabled;
+                        const markerColor = isOnline ? "#059669" : "#6b7280";
+                        const iconPreset = isOnline ? "islands#greenCircleDotIcon" : "islands#greyCircleDotIcon";
+
+                        return (
+                            <Placemark
+                                key={employee.uid}
+                                geometry={[loc.lat, loc.lng]}
+                                properties={{
+                                    balloonContentHeader: `<b>${employee.firstName} ${employee.lastName}</b>`,
+                                    balloonContentBody: `
+                    <div style="font-family: sans-serif; min-width: 220px; padding-top: 10px;">
+                      <p><b>Kasbi:</b> ${employee.profession}</p>
+                      <p><b>Status:</b> ${isOnline ? "Online" : "Offline"}</p>
+                      ${!isOnline ? `<p style="font-size: 11px;">Oxirgi faollik: ${formatLastSeen(employee.currentLocation.timestamp)}</p>` : ""}
+                      
+                      <button onclick="setMapRoute(${loc.lat}, ${loc.lng})" style="
+                        width: 100%; padding: 12px; background: #2563eb; color: white; border: none;
+                        border-radius: 10px; font-weight: bold; cursor: pointer; margin-top: 10px;
+                        font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px;
+                      ">
+                        MARSHRUT CHIZISH
+                      </button>
+                    </div>
+                  `,
+                                }}
+                                options={{
+                                    preset: iconPreset,
+                                    iconColor: markerColor,
+                                    balloonMaxWidth: 300,
+                                    hideIconOnBalloonOpen: false,
+                                }}
+                            />
+                        );
+                    })}
+                </Map>
+            </YMaps>
+        </div>
+    );
 }

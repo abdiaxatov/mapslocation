@@ -25,6 +25,7 @@ import {
   Receipt
 } from "lucide-react";
 import { toast } from "sonner";
+import YandexMap from "@/components/ui/yandex-map";
 
 export default function EmployeeDashboard() {
   const { user, userData, loading, signOut } = useAuth();
@@ -386,32 +387,10 @@ export default function EmployeeDashboard() {
           </div>
         </div>
 
-        {/* Current Location Card */}
+        {/* Current Location Map */}
         {locationEnabled && currentLocation && (
-          <div className="bg-card border border-border rounded-2xl overflow-hidden">
-            <div className="p-5 border-b border-border">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
-                  <MapPinned className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">Hozirgi joylashuv</h3>
-                  <p className="text-sm text-muted-foreground">Real vaqt koordinatalari</p>
-                </div>
-              </div>
-            </div>
-            <div className="p-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-secondary rounded-xl">
-                  <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">Kenglik</p>
-                  <p className="font-mono text-sm text-foreground">{currentLocation.lat.toFixed(6)}</p>
-                </div>
-                <div className="p-4 bg-secondary rounded-xl">
-                  <p className="text-xs text-muted-foreground mb-1 uppercase tracking-wider">Uzunlik</p>
-                  <p className="font-mono text-sm text-foreground">{currentLocation.lng.toFixed(6)}</p>
-                </div>
-              </div>
-            </div>
+          <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm h-[300px] sm:h-[400px]">
+            <YandexMap center={currentLocation} />
           </div>
         )}
 

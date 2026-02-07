@@ -176,7 +176,7 @@ export default function EmployeeList({ employees, onSelectEmployee, selectedEmpl
 
   return (
     <>
-      <div className="flex flex-col h-full bg-card border-r border-border">
+      <div className="flex flex-col h-full max-h-[calc(100vh-4rem)] lg:max-h-full bg-card border-r border-border">
         <div className="p-3 sm:p-4 border-b border-border space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

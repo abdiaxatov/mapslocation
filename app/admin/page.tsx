@@ -165,7 +165,7 @@ export default function AdminDashboard() {
   const offlineCount = employees.filter(e => !e.locationEnabled).length;
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <header className="bg-card border-b border-border px-4 h-16 sticky top-0 z-50 flex items-center">
         <div className="flex items-center justify-between w-full max-w-[1800px] mx-auto">
@@ -250,9 +250,10 @@ export default function AdminDashboard() {
         {/* Sidebar - Employee List */}
         <aside
           className={`
-            fixed lg:static inset-y-0 left-0 z-40    bg-card border-r border-border
+            fixed lg:static inset-y-0 left-0 z-40 bg-card border-r border-border
             transform transition-transform duration-300 ease-in-out
             lg:transform-none mt-16 lg:mt-0
+            w-[280px] sm:w-[320px] flex flex-col
             ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
           `}
         >
@@ -279,29 +280,43 @@ export default function AdminDashboard() {
           {activeTab === "map" ? (
             <>
               {/* Stats Bar */}
-              <div className="bg-card border-b border-border px-4 py-3">
-                <div className="flex flex-wrap items-center gap-4 sm:gap-6 text-sm">
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Jami:</span>
-                    <span className="font-semibold text-foreground">{employees.length}</span>
+              <div className="bg-card/50 backdrop-blur-md border-b border-border px-6 py-4">
+                <div className="flex flex-wrap items-center gap-6 sm:gap-8 text-sm">
+                  <div className="flex items-center gap-2.5 group">
+                    <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                      <Users className="h-4 w-4 text-primary" />
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground block leading-none mb-1">Jami Hodimlar</span>
+                      <span className="font-bold text-foreground">{employees.length}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                    <span className="text-muted-foreground">Online:</span>
-                    <span className="font-semibold text-primary">{onlineCount}</span>
+                  <div className="h-8 w-px bg-border hidden sm:block" />
+                  <div className="flex items-center gap-2.5 group">
+                    <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center border border-green-500/20">
+                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground block leading-none mb-1">Online</span>
+                      <span className="font-bold text-green-500 text-base">{onlineCount}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-muted-foreground" />
-                    <span className="text-muted-foreground">Offline:</span>
-                    <span className="font-semibold text-foreground">{offlineCount}</span>
+                  <div className="h-8 w-px bg-border hidden sm:block" />
+                  <div className="flex items-center gap-2.5 group">
+                    <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center border border-red-500/20">
+                      <div className="w-2 h-2 rounded-full bg-red-500" />
+                    </div>
+                    <div>
+                      <span className="text-xs text-muted-foreground block leading-none mb-1">Offline</span>
+                      <span className="font-bold text-foreground text-base">{offlineCount}</span>
+                    </div>
                   </div>
                 </div>
               </div>
 
               {/* Map */}
-              <div className="flex-1 p-4">
-                <div className="h-full bg-card rounded-xl border border-border overflow-hidden">
+              <div className="flex-1 p-4 min-h-[500px] lg:min-h-0">
+                <div className="h-full min-h-[400px] bg-card rounded-xl border border-border overflow-hidden">
                   <LocationMap
                     employees={employees}
                     selectedEmployee={selectedEmployee}
