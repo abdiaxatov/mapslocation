@@ -211,37 +211,34 @@ export default function LocationMap({
                 </div>
             )}
 
-            <div className="absolute top-2 right-2 sm:bottom-6 sm:left-4 sm:top-auto sm:right-auto z-10 flex flex-col sm:flex-col gap-2 sm:gap-3">
+            <div className="absolute top-4 right-4 sm:top-auto sm:bottom-8 sm:left-4 z-10 flex flex-col gap-3">
                 <button
                     onClick={() => {
                         const searchInput = document.querySelector('.ymaps-2-1-79-searchbox-input__input') as HTMLInputElement;
-                        if (searchInput) {
-                            searchInput.focus();
-                        } else {
-                            toast.info("Qidiruv paneli tepadagi markazda joylashgan");
-                        }
+                        if (searchInput) searchInput.focus();
+                        else toast.info("Qidiruv paneli ekranning yuqori qismida");
                     }}
-                    className="p-2 sm:p-3 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl sm:rounded-2xl shadow-xl hover:bg-white transition-all active:scale-95 text-slate-700 group/search"
+                    className="w-12 h-12 flex items-center justify-center bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/20 dark:border-slate-800/50 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:scale-105 active:scale-95 transition-all text-slate-700 dark:text-slate-200"
                     title="Qidirish"
                 >
-                    <Search className="w-5 h-5 sm:w-6 sm:h-6 group-hover/search:scale-110 transition-transform" />
+                    <Search className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
 
                 <button
                     onClick={focusMe}
-                    className="p-2 sm:p-3 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl sm:rounded-2xl shadow-xl hover:bg-white transition-all active:scale-95 text-blue-600 group/btn"
+                    className="w-12 h-12 flex items-center justify-center bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl border border-white/20 dark:border-slate-800/50 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] hover:scale-105 active:scale-95 transition-all text-blue-600 dark:text-blue-400"
                     title="Mening joylashuvim"
                 >
-                    <Target className="w-5 h-5 sm:w-6 sm:h-6 group-active/btn:rotate-12 transition-transform" />
+                    <Target className="w-5 h-5 sm:w-6 sm:h-6" />
                 </button>
 
                 {routeActive && (
                     <button
                         onClick={clearRoute}
-                        className="p-2 sm:p-3 bg-red-500/90 backdrop-blur-md border border-red-600 rounded-xl sm:rounded-2xl shadow-xl hover:bg-red-500 transition-all active:scale-95 text-white flex items-center gap-2 font-bold text-[10px] sm:text-xs"
+                        className="h-12 px-4 flex items-center gap-2 bg-red-500/90 backdrop-blur-xl border border-red-400/30 rounded-2xl shadow-[0_8px_30px_rgb(239,68,68,0.2)] hover:bg-red-500 active:scale-95 transition-all text-white font-bold text-xs uppercase tracking-wider"
                     >
-                        <X className="w-4 h-4 sm:w-5 sm:h-5" />
-                        TOZALASH
+                        <X className="w-5 h-5" />
+                        <span className="hidden sm:inline">Tozalash</span>
                     </button>
                 )}
             </div>

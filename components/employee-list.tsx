@@ -70,55 +70,41 @@ export default function EmployeeList({ employees, onSelectEmployee, onSelectRout
           : "hover:bg-secondary border border-transparent"
         }`}
     >
-      <div className="flex items-start gap-2 sm:gap-4">
+      <div className="flex items-start gap-4">
         <div
-          className={`relative w-10 h-10 rounded-xl ${employee.role === "admin"
-            ? "bg-gradient-to-br from-blue-500/20 to-blue-500/10 border border-blue-500/30"
-            : "bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/10"
-            } flex items-center justify-center shrink-0`}
+          className={`relative w-12 h-12 rounded-2xl ${employee.role === "admin"
+            ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/30"
+            : "bg-gradient-to-br from-primary to-primary/80 text-white shadow-lg shadow-primary/30"
+            } flex items-center justify-center shrink-0 transition-transform group-active:scale-95`}
         >
-          <span className={`font-bold text-sm ${employee.role === "admin" ? "text-blue-500" : "text-primary"
-            }`}>
+          <span className="font-bold text-base">
             {employee.firstName[0]}{employee.lastName[0]}
           </span>
+          <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-card ${employee.locationEnabled ? "bg-green-500" : "bg-slate-400"}`} />
         </div>
         <button
           type="button"
           onClick={() => onSelectEmployee?.(employee)}
-          className="flex-1 min-w-0 text-left cursor-pointer group/info"
+          className="flex-1 min-w-0 text-left cursor-pointer"
         >
-          <div className="flex items-center justify-between mb-1.5 gap-2">
+          <div className="flex items-center justify-between mb-1 gap-2">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="font-semibold text-foreground truncate text-base sm:text-lg" title={`${employee.firstName} ${employee.lastName}`}>
+              <span className="font-bold text-foreground truncate text-base" title={`${employee.firstName} ${employee.lastName}`}>
                 {employee.firstName} {employee.lastName}
               </span>
-              {employee.uid === currentUserId && (
-                <Badge variant="secondary" className="text-[10px] bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 px-2 h-5 border-0 shrink-0 font-bold">
-                  Siz
-                </Badge>
-              )}
-              {employee.role === "admin" && (
-                <Badge variant="outline" className="text-[10px] border-blue-500/50 text-blue-500 h-5 px-1.5 shrink-0 font-bold hidden sm:flex">
-                  <Shield className="h-2.5 w-2.5 mr-0.5" />
-                  Admin
-                </Badge>
-              )}
             </div>
-            <div className="shrink-0">
-              {employee.locationEnabled ? (
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
-                </span>
-              ) : (
-                <span className="h-2.5 w-2.5 bg-muted-foreground/30 rounded-full block"></span>
-              )}
-            </div>
+            {employee.uid === currentUserId && (
+              <Badge variant="secondary" className="text-[10px] bg-blue-500/10 text-blue-500 border-0 h-5 px-2 font-bold whitespace-nowrap">
+                Siz
+              </Badge>
+            )}
           </div>
 
-          <div className="space-y-1 pr-2">
-            <div className="flex items-center gap-1.5 text-xs sm:text-sm text-muted-foreground">
-              <Briefcase className="h-3 w-3 shrink-0" />
+          <div className="space-y-1.5 pr-2">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
+              <div className="w-5 h-5 rounded-md bg-secondary flex items-center justify-center">
+                <Briefcase className="h-3 w-3" />
+              </div>
               <span className="truncate">{employee.profession}</span>
             </div>
 
@@ -126,25 +112,18 @@ export default function EmployeeList({ employees, onSelectEmployee, onSelectRout
               <a
                 href={`tel:${employee.phoneNumber}`}
                 onClick={(e) => e.stopPropagation()}
-                className="flex items-center gap-1.5 text-xs sm:text-sm text-primary hover:text-primary/80 transition-colors w-fit font-medium"
+                className="flex items-center gap-2 text-xs text-primary hover:text-primary/80 transition-colors w-fit font-bold"
               >
-                <Phone className="h-3 w-3 shrink-0" />
-                <span className="truncate max-w-[120px] sm:max-w-none">{employee.phoneNumber}</span>
+                <div className="w-5 h-5 rounded-md bg-primary/10 flex items-center justify-center text-primary">
+                  <Phone className="h-3 w-3" />
+                </div>
+                <span>{employee.phoneNumber}</span>
               </a>
-            )}
-
-            {employee.currentLocation && (
-              <div className="flex items-center gap-1.5 text-xs sm:text-sm text-foreground/80">
-                <MapPin className="h-3 w-3 shrink-0 text-muted-foreground" />
-                <span className="truncate">
-                  {employee.currentLocation.lat.toFixed(6)}, {employee.currentLocation.lng.toFixed(6)}
-                </span>
-              </div>
             )}
           </div>
         </button>
 
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0 ml-auto pl-2">
+        <div className="flex flex-col sm:flex-row items-center gap-1.5 shrink-0 ml-auto">
           {employee.currentLocation && employee.locationEnabled && (
             <Button
               variant="outline"
@@ -153,10 +132,10 @@ export default function EmployeeList({ employees, onSelectEmployee, onSelectRout
                 e.stopPropagation();
                 onSelectRoute?.(employee);
               }}
-              className="h-8 w-8 sm:h-9 sm:w-9 text-blue-500 hover:text-blue-600 border-blue-500/20 hover:bg-blue-500/10"
-              title="Marshrut chizish"
+              className="h-9 w-9 rounded-xl text-blue-500 border-blue-500/20 bg-blue-500/5 hover:bg-blue-500/10"
+              title="Marshrut"
             >
-              <Navigation2 className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
+              <Navigation2 className="h-4.5 w-4.5" />
             </Button>
           )}
           <Button
@@ -166,10 +145,10 @@ export default function EmployeeList({ employees, onSelectEmployee, onSelectRout
               e.stopPropagation();
               setEditEmployee(employee);
             }}
-            className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-foreground border-border hover:bg-secondary/80"
+            className="h-9 w-9 rounded-xl text-muted-foreground hover:text-foreground border-border hover:bg-secondary/80"
             title="Tahrirlash"
           >
-            <Pencil className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
+            <Pencil className="h-4.5 w-4.5" />
           </Button>
           <Button
             variant="outline"
@@ -179,10 +158,10 @@ export default function EmployeeList({ employees, onSelectEmployee, onSelectRout
               setDeleteEmployee(employee);
             }}
             disabled={employee.uid === currentUserId}
-            className="h-8 w-8 sm:h-9 sm:w-9 text-muted-foreground hover:text-destructive border-border hover:bg-destructive/10 disabled:opacity-30 disabled:cursor-not-allowed"
-            title={employee.uid === currentUserId ? "O'zingizni o'chira olmaysiz" : "O'chirish"}
+            className="h-9 w-9 rounded-xl text-muted-foreground hover:text-destructive border-border hover:bg-destructive/10 disabled:opacity-30"
+            title="O'chirish"
           >
-            <Trash2 className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
+            <Trash2 className="h-4.5 w-4.5" />
           </Button>
         </div>
       </div>
@@ -191,8 +170,13 @@ export default function EmployeeList({ employees, onSelectEmployee, onSelectRout
 
   return (
     <>
-      <div className="flex flex-col h-full max-h-[calc(100vh-4rem)] lg:max-h-full bg-card border-r border-border">
-        <div className="p-3 sm:p-4 border-b border-border space-y-3">
+      <div className="flex flex-col h-full bg-card lg:border-r border-border">
+        {/* Mobile Handle - for aesthetics */}
+        <div className="lg:hidden flex justify-center py-2 shrink-0">
+          <div className="w-12 h-1.5 rounded-full bg-slate-300/50" />
+        </div>
+
+        <div className="p-4 border-b border-border space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="h-5 w-5 text-primary" />

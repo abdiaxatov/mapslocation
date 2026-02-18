@@ -200,14 +200,14 @@ export default function AdminDashboard() {
   const offlineCount = employees.filter(e => !e.locationEnabled).length;
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
+    <div className="h-screen bg-background flex flex-col overflow-hidden relative">
       {/* Header */}
-      <header className="bg-card border-b border-border px-4 h-16 sticky top-0 z-50 flex items-center">
+      <header className="bg-card/80 backdrop-blur-md border-b border-border px-4 h-16 sticky top-0 z-50 flex items-center">
         <div className="flex items-center justify-between w-full max-w-[1800px] mx-auto">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="lg:hidden p-2 hover:bg-secondary rounded-lg transition-colors text-foreground"
+              className="lg:hidden p-2 hover:bg-secondary rounded-xl transition-colors text-foreground"
               aria-label="Toggle sidebar"
             >
               {sidebarOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -216,63 +216,38 @@ export default function AdminDashboard() {
               <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
                 <MapPin className="h-5 w-5 text-primary" />
               </div>
-              <div className="hidden sm:block">
-                <h1 className="font-semibold text-foreground">Admin Panel</h1>
-                <p className="text-xs text-muted-foreground">Hodimlar joylashuvi</p>
+              <div className="hidden xs:block">
+                <h1 className="font-bold text-foreground text-sm sm:text-base leading-none mb-1">Admin Panel</h1>
+                <p className="text-[10px] sm:text-xs text-muted-foreground">Nazorat markazi</p>
               </div>
             </div>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-
-
             {activeTab === "map" && (
-              <div className="flex items-center gap-2 bg-secondary/50 px-2 sm:px-3 py-1.5 rounded-lg border border-border">
-                <div className="flex items-center gap-1.5 sm:gap-2">
-                  {locationEnabled ? <Wifi className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" /> : <WifiOff className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground" />}
-                  <span className="text-xs sm:text-sm font-medium">
-                    {locationEnabled ? "Faol" : "O'chiq"}
+              <div className="flex items-center gap-2 bg-secondary/50 px-2 sm:px-3 py-1.5 rounded-xl border border-border/50">
+                <div className="flex items-center gap-2">
+                  {locationEnabled ? <Wifi className="h-4 w-4 text-primary" /> : <WifiOff className="h-4 w-4 text-muted-foreground" />}
+                  <span className="text-xs font-bold hidden sm:inline">
+                    {locationEnabled ? "Onlayn" : "Oflayn"}
                   </span>
                 </div>
                 <Switch
                   checked={locationEnabled}
                   onCheckedChange={handleToggleLocation}
-                  className="data-[state=checked]:bg-primary scale-75 sm:scale-90"
+                  className="data-[state=checked]:bg-primary scale-90"
                 />
               </div>
             )}
 
-
-            <div className="flex items-center gap-1 bg-secondary/50 p-1 rounded-lg border border-border">
-              <button
-                onClick={() => setActiveTab("map")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors ${activeTab === "map"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-                  }`}
-              >
-                <MapPin className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">Xarita</span>
-              </button>
-              <button
-                onClick={() => setActiveTab("payments")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-xs sm:text-sm font-medium transition-colors ${activeTab === "payments"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-                  }`}
-              >
-                <DollarSign className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                <span className="hidden sm:inline">To'lovlar</span>
-              </button>
-            </div>
-
+            <div className="h-8 w-px bg-border/50 mx-1 hidden sm:block" />
 
             <AddEmployeeDialog />
             <Button
               variant="ghost"
               size="icon"
               onClick={handleLogout}
-              className="text-muted-foreground hover:text-foreground hover:bg-secondary"
+              className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all"
             >
               <LogOut className="h-5 w-5" />
             </Button>
@@ -281,7 +256,7 @@ export default function AdminDashboard() {
       </header>
 
       {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden lg:pb-0 pb-20">
         {/* Sidebar - Employee List */}
         <aside
           className={`
@@ -312,47 +287,37 @@ export default function AdminDashboard() {
         )}
 
         {/* Map Area */}
-        <main className="flex-1 flex flex-col">
+        <main className="flex-1 flex flex-col relative">
           {activeTab === "map" ? (
             <>
               {/* Stats Bar */}
-              <div className="bg-card/50 backdrop-blur-md border-b border-border px-6 py-4">
-                <div className="flex flex-wrap items-center gap-6 sm:gap-8 text-sm">
-                  <div className="flex items-center gap-2.5 group">
-                    <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+              <div className="bg-card/30 backdrop-blur-sm border-b border-border px-4 sm:px-6 py-3 sm:py-4">
+                <div className="flex flex-wrap items-center gap-4 sm:gap-8 text-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
                       <Users className="h-4 w-4 text-primary" />
                     </div>
                     <div>
-                      <span className="text-xs text-muted-foreground block leading-none mb-1">Jami Hodimlar</span>
+                      <span className="text-[10px] text-muted-foreground block leading-none mb-1 font-medium">Hodimlar</span>
                       <span className="font-bold text-foreground">{employees.length}</span>
                     </div>
                   </div>
-                  <div className="h-8 w-px bg-border hidden sm:block" />
-                  <div className="flex items-center gap-2.5 group">
-                    <div className="w-8 h-8 rounded-lg bg-green-500/10 flex items-center justify-center border border-green-500/20">
+                  <div className="h-8 w-px bg-border/50 hidden sm:block" />
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-green-500/10 flex items-center justify-center border border-green-500/20">
                       <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                     </div>
                     <div>
-                      <span className="text-xs text-muted-foreground block leading-none mb-1">Online</span>
-                      <span className="font-bold text-green-500 text-base">{onlineCount}</span>
-                    </div>
-                  </div>
-                  <div className="h-8 w-px bg-border hidden sm:block" />
-                  <div className="flex items-center gap-2.5 group">
-                    <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center border border-red-500/20">
-                      <div className="w-2 h-2 rounded-full bg-red-500" />
-                    </div>
-                    <div>
-                      <span className="text-xs text-muted-foreground block leading-none mb-1">Offline</span>
-                      <span className="font-bold text-foreground text-base">{offlineCount}</span>
+                      <span className="text-[10px] text-muted-foreground block leading-none mb-1 font-medium">Onlayn</span>
+                      <span className="font-bold text-green-600">{onlineCount}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Map */}
-              <div className="flex-1 p-4 min-h-[500px] lg:min-h-0">
-                <div className="h-full min-h-[400px] bg-card rounded-xl border border-border overflow-hidden">
+              <div className="flex-1 p-2 sm:p-4">
+                <div className="h-full min-h-[400px] bg-card rounded-2xl sm:rounded-3xl border border-border shadow-inner overflow-hidden">
                   <LocationMap
                     employees={employees}
                     selectedEmployee={selectedEmployee}
@@ -363,7 +328,7 @@ export default function AdminDashboard() {
               </div>
             </>
           ) : (
-            <div className="flex-1 p-4 overflow-auto">
+            <div className="flex-1 p-3 sm:p-6 overflow-auto">
               <div className="max-w-7xl mx-auto">
                 <AdminPaymentAnalytics />
               </div>
@@ -371,6 +336,39 @@ export default function AdminDashboard() {
           )}
         </main>
       </div>
+
+      {/* Modern Bottom Navigation Bar */}
+      <nav className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-[90%] max-w-[400px]">
+        <div className="bg-card/90 backdrop-blur-2xl border border-white/20 dark:border-slate-800/50 rounded-3xl p-2 shadow-[0_10px_40px_rgba(0,0,0,0.15)] flex items-center justify-around gap-2">
+          <button
+            onClick={() => setActiveTab("map")}
+            className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all relative group ${activeTab === "map"
+                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+                : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+              }`}
+          >
+            <MapPin className={`h-5 w-5 transition-transform duration-300 ${activeTab === "map" ? "scale-110" : "group-hover:scale-110"}`} />
+            <span className="text-[10px] font-bold uppercase tracking-widest hidden xs:block">Xarita</span>
+            {activeTab === "map" && (
+              <div className="absolute -bottom-1 w-1 h-1 rounded-full bg-white" />
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab("payments")}
+            className={`flex-1 flex flex-col items-center gap-1.5 py-3 rounded-2xl transition-all relative group ${activeTab === "payments"
+                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30"
+                : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"
+              }`}
+          >
+            <DollarSign className={`h-5 w-5 transition-transform duration-300 ${activeTab === "payments" ? "scale-110" : "group-hover:scale-110"}`} />
+            <span className="text-[10px] font-bold uppercase tracking-widest hidden xs:block">To'lovlar</span>
+            {activeTab === "payments" && (
+              <div className="absolute -bottom-1 w-1 h-1 rounded-full bg-white" />
+            )}
+          </button>
+        </div>
+      </nav>
     </div>
   );
 }
