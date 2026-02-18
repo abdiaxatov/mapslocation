@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth, type UserData } from "@/contexts/auth-context";
-import { collection, onSnapshot, query } from "firebase/firestore";
+import { collection, onSnapshot, query, doc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import dynamic from "next/dynamic";
 import AddEmployeeDialog from "@/components/add-employee-dialog";
@@ -11,9 +11,10 @@ import EmployeeList from "@/components/employee-list";
 import { Button } from "@/components/ui/button";
 import { Loader2, LogOut, MapPin, Menu, X, Users, Wifi, WifiOff, DollarSign } from "lucide-react";
 import { toast } from "sonner";
-import { doc, updateDoc, serverTimestamp } from "firebase/firestore";
-import { Switch } from "@/components/ui/switch";
 import AdminPaymentAnalytics from "@/components/admin-payment-analytics";
+import { isSameDay } from "date-fns";
+import type { Payment } from "@/types/types";
+import { Switch } from "@/components/ui/switch";
 
 const LocationMap = dynamic(() => import("@/components/location-map"), {
   ssr: false,
@@ -135,6 +136,28 @@ export default function AdminDashboard() {
     return () => unsubscribe();
   }, []);
 
+  const [employeeDailyStats, setEmployeeDailyStats] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const q = query(collection(db, "payments"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const stats: Record<string, number> = {};
+      const now = new Date();
+
+      snapshot.forEach((doc) => {
+        const data = doc.data() as Payment;
+        const pDate = data.date.toDate ? data.date.toDate() : new Date(data.date as any);
+
+        if (isSameDay(pDate, now)) {
+          stats[data.employeeId] = (stats[data.employeeId] || 0) + data.amount;
+        }
+      });
+      setEmployeeDailyStats(stats);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
   const handleLogout = async () => {
     await signOut();
     router.push("/");
@@ -145,8 +168,6 @@ export default function AdminDashboard() {
     setSidebarOpen(false);
     if (employee.currentLocation && employee.locationEnabled) {
       toast.success(`${employee.firstName} joylashuviga o'tildi`);
-      // Automatically trigger routing for the "ideal" experience
-      handleRouteSelect(employee);
     }
   };
 
@@ -336,6 +357,7 @@ export default function AdminDashboard() {
                     employees={employees}
                     selectedEmployee={selectedEmployee}
                     currentUserId={user?.uid}
+                    dailyStats={employeeDailyStats}
                   />
                 </div>
               </div>

@@ -22,6 +22,7 @@ interface LocationMapProps {
     zoom?: number;
     selectedEmployee?: UserData | null;
     currentUserId?: string;
+    dailyStats?: Record<string, number>;
 }
 
 const DEFAULT_CENTER = { lat: 41.2995, lng: 69.2401 };
@@ -38,6 +39,7 @@ export default function LocationMap({
     zoom = 13,
     selectedEmployee,
     currentUserId,
+    dailyStats,
 }: LocationMapProps) {
     const [map, setMap] = useState<any>(null);
     const [ymaps, setYmaps] = useState<any>(null);
@@ -209,10 +211,9 @@ export default function LocationMap({
                 </div>
             )}
 
-            <div className="absolute bottom-6 left-4 z-10 flex flex-col gap-3">
+            <div className="absolute top-2 right-2 sm:bottom-6 sm:left-4 sm:top-auto sm:right-auto z-10 flex flex-col sm:flex-col gap-2 sm:gap-3">
                 <button
                     onClick={() => {
-                        // Focus search input if possible or show toast
                         const searchInput = document.querySelector('.ymaps-2-1-79-searchbox-input__input') as HTMLInputElement;
                         if (searchInput) {
                             searchInput.focus();
@@ -220,31 +221,31 @@ export default function LocationMap({
                             toast.info("Qidiruv paneli tepadagi markazda joylashgan");
                         }
                     }}
-                    className="p-3 bg-white/95 backdrop-blur-md border border-gray-200 rounded-2xl shadow-xl hover:bg-white transition-all active:scale-90 text-slate-700 group/search"
+                    className="p-2 sm:p-3 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl sm:rounded-2xl shadow-xl hover:bg-white transition-all active:scale-95 text-slate-700 group/search"
                     title="Qidirish"
                 >
-                    <Search className="w-6 h-6 group-hover/search:scale-110 transition-transform" />
+                    <Search className="w-5 h-5 sm:w-6 sm:h-6 group-hover/search:scale-110 transition-transform" />
                 </button>
 
                 <button
                     onClick={focusMe}
-                    className="p-3 bg-white/95 backdrop-blur-md border border-gray-200 rounded-2xl shadow-xl hover:bg-white transition-all active:scale-90 text-blue-600 group/btn"
+                    className="p-2 sm:p-3 bg-white/95 backdrop-blur-md border border-gray-200 rounded-xl sm:rounded-2xl shadow-xl hover:bg-white transition-all active:scale-95 text-blue-600 group/btn"
                     title="Mening joylashuvim"
                 >
-                    <Target className="w-6 h-6 group-active/btn:rotate-12 transition-transform" />
+                    <Target className="w-5 h-5 sm:w-6 sm:h-6 group-active/btn:rotate-12 transition-transform" />
                 </button>
 
                 {routeActive && (
                     <button
                         onClick={clearRoute}
-                        className="p-3 bg-red-500/90 backdrop-blur-md border border-red-600 rounded-2xl shadow-xl hover:bg-red-500 transition-all active:scale-90 text-white flex items-center gap-2 font-bold text-xs"
+                        className="p-2 sm:p-3 bg-red-500/90 backdrop-blur-md border border-red-600 rounded-xl sm:rounded-2xl shadow-xl hover:bg-red-500 transition-all active:scale-95 text-white flex items-center gap-2 font-bold text-[10px] sm:text-xs"
                     >
-                        <X className="w-5 h-5" />
+                        <X className="w-4 h-4 sm:w-5 sm:h-5" />
                         TOZALASH
                     </button>
                 )}
             </div>
-        
+
 
             <YMaps query={{ apikey: apiKey, lang: "uz_UZ", coordorder: "latlong", load: "package.full" }}>
                 <Map
@@ -265,26 +266,34 @@ export default function LocationMap({
                 >
                     {/* Native controls optimized for mobile/desktop spacing */}
                     <FullscreenControl options={{ position: { right: 10, top: 10 } }} />
-                    <TypeSelector options={{ position: { right: 10, top: 50 } }} />
-                    <TrafficControl options={{ position: { right: 10, top: 90 } }} />
+                    <TypeSelector options={{ position: { right: 10, top: 45 } }} />
+                    <TrafficControl options={{ position: { right: 10, top: 80 } }} />
 
-                    <ZoomControl options={{ position: { right: 10, bottom: 100 } }} />
-                    <GeolocationControl options={{ position: { right: 10, bottom: 180 } }} />
+                    <ZoomControl options={{
+                        size: "small",
+                        position: { right: 10, bottom: 120 }
+                    }} />
+
+                    <GeolocationControl options={{
+                        position: { right: 10, bottom: 190 }
+                    }} />
 
                     <SearchControl options={{
                         float: 'none',
                         position: { top: 10, left: 'center' },
-                        maxWidth: [200, 300, 450],
-                        placeholderContent: "Manzilni qidiring..."
+                        maxWidth: [150, 250, 400],
+                        placeholderContent: "Manzil..."
                     }} />
 
-                    {myLocation && (
+                    {myLocation && !employees.some(e => e.uid === currentUserId) && (
                         <Placemark
                             geometry={[myLocation.lat, myLocation.lng]}
-                            properties={{ balloonContent: "Sizning joyingiz" }}
+                            properties={{
+                                balloonContent: "Sizning joyingiz",
+                                iconCaption: "Men"
+                            }}
                             options={{
                                 preset: 'islands#blueCircleDotIconWithCaption',
-                                iconCaption: 'Men',
                                 iconColor: '#3b82f6',
                             }}
                         />
@@ -295,40 +304,61 @@ export default function LocationMap({
                         if (!loc || typeof loc.lat !== 'number' || typeof loc.lng !== 'number') return null;
 
                         const isOnline = employee.locationEnabled;
-                        const markerColor = isOnline ? "#059669" : "#6b7280";
-                        const iconPreset = isOnline ? "islands#greenCircleDotIcon" : "islands#greyCircleDotIcon";
+                        const todayTotal = dailyStats?.[employee.uid] || 0;
+                        const markerColor = isOnline ? "#10b981" : "#64748b";
+                        const iconPreset = isOnline
+                            ? "islands#greenCircleDotIconWithCaption"
+                            : "islands#greyCircleDotIconWithCaption";
+
+                        const formatCurrency = (amount: number) => {
+                            return new Intl.NumberFormat("uz-UZ").format(amount);
+                        };
 
                         return (
                             <Placemark
                                 key={employee.uid}
                                 geometry={[loc.lat, loc.lng]}
-                                onClick={() => {
-                                    if (typeof window !== "undefined" && window.setMapRoute) {
-                                        window.setMapRoute(loc.lat, loc.lng);
-                                    }
-                                }}
                                 properties={{
-                                    balloonContentHeader: `<b>${employee.firstName} ${employee.lastName}</b>`,
+                                    iconCaption: `${employee.firstName} | ${formatCurrency(todayTotal)}`,
+                                    balloonContentHeader: `
+                                        <div style="padding: 10px; background: #f8fafc; border-bottom: 2px solid #e2e8f0; margin: -10px -10px 10px -10px;">
+                                            <div style="font-weight: 800; color: #1e293b; font-size: 16px;">${employee.firstName} ${employee.lastName}</div>
+                                            <div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">${employee.profession}</div>
+                                        </div>
+                                    `,
                                     balloonContentBody: `
-                                        <div style="font-family: sans-serif; min-width: 200px; padding: 5px;">
-                                            <p><b>Kasbi:</b> ${employee.profession}</p>
-                                            <p><b>Status:</b> ${isOnline ? "Online" : "Offline"}</p>
-                                            <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+                                        <div style="font-family: sans-serif; min-width: 220px; padding: 5px 0;">
+                                            <div style="display: flex; align-items: center; justify-content: space-between; background: #f1f5f9; padding: 12px; border-radius: 12px; margin-bottom: 15px;">
+                                                <div style="font-size: 12px; color: #475569; font-weight: 500;">Bugungi tushum:</div>
+                                                <div style="font-size: 16px; font-weight: 800; color: #10b981;">
+                                                    ${formatCurrency(todayTotal)} <span style="font-size: 10px; font-weight: 600;">so'm</span>
+                                                </div>
+                                            </div>
+                                            
+                                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 15px; font-size: 12px;">
+                                                <div style="width: 8px; height: 8px; border-radius: 50%; background: ${isOnline ? '#10b981' : '#64748b'}"></div>
+                                                <span style="font-weight: 600; color: ${isOnline ? '#10b981' : '#64748b'}">${isOnline ? "Hozir onlayn" : "Oflayn"}</span>
+                                            </div>
+
+                                            <div style="display: flex; flex-direction: column; gap: 8px;">
                                                 <button onclick="setMapRoute(${loc.lat}, ${loc.lng})" style="
-                                                    width: 100%; padding: 10px; background: #2563eb; color: white;
-                                                    border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
+                                                    width: 100%; height: 42px; background: #3b82f6; color: white;
+                                                    border: none; border-radius: 10px; font-weight: 700; cursor: pointer;
+                                                    font-size: 13px; box-shadow: 0 4px 6px -1px rgb(59 130 246 / 0.2);
                                                 ">
-                                                    YO'L CHIZISH
+                                                    NAVIGATSIYA (YO'L)
                                                 </button>
                                                 <a href="https://yandex.uz/maps/?rtext=${myLocation ? `${myLocation.lat},${myLocation.lng}` : ''}~${loc.lat},${loc.lng}&rtt=auto" 
                                                    target="_blank" 
                                                    rel="noopener noreferrer"
                                                    style="
-                                                    width: 100%; padding: 10px; background: #059669; color: white;
-                                                    border: none; border-radius: 8px; font-weight: bold; cursor: pointer;
+                                                    width: 100%; height: 42px; background: #10b981; color: white;
+                                                    border: none; border-radius: 10px; font-weight: 700; cursor: pointer;
                                                     text-decoration: none; text-align: center; font-size: 13px;
+                                                    display: flex; align-items: center; justify-content: center;
+                                                    box-shadow: 0 4px 6px -1px rgb(16 185 129 / 0.2);
                                                 ">
-                                                    NAVIGATORDA OCHISH
+                                                    YANDEX MAPSDA OCHISH
                                                 </a>
                                             </div>
                                         </div>
@@ -338,6 +368,8 @@ export default function LocationMap({
                                     preset: iconPreset,
                                     iconColor: markerColor,
                                     balloonMaxWidth: 300,
+                                    balloonPanelMaxMapArea: 0,
+                                    hideIconOnBalloonOpen: false
                                 }}
                             />
                         );
